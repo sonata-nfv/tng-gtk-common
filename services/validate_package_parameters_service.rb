@@ -27,19 +27,25 @@
 ## partner consortium (www.sonata-nfv.eu).
 # frozen_string_literal: true
 # encoding: utf-8
-require 'sinatra'
-require 'json'
+class ValidatePackageParametersService
+  # from here: https://git.cs.upb.de/5gtango/generalInfo/wikis/user-story-t41-1-packaging#unpacking
+  def self.call(params)
+    # Example params: {"x"=>"1", "y"=>"2", "package"=>{:filename=>"Gemfile", :type=>nil, :name=>"package", :tempfile=>#<Tempfile:/var/folders/7j/8jj6x0ld6pz_rhdvblh9jy3r0000gn/T/RackMultipart20180302-20343-199a5yp>, :head=>"Content-Disposition: form-data; name=\"package\"; filename=\"Gemfile\"\r\n"}}
 
-class PackageController < ApplicationController
-
-  before { content_type :json}
-  # Receive packages
-  post '/?' do
+    # package is mandatory, of type file, no default value: Uploaded package file
+    raise ArgumentError.new('Package parameter is mandatory') unless valid_package_param?(params)
+    true
     
-    $stderr.puts request.content_type
-    halt [400, {}, ['Just accepting multipart package file for now']] unless request.content_type =~ /^multipart\/form-data/
-    
-    $stderr.puts "Params: #{request.params}"
-    halt [201, {}, ["Created with CONTENT_TYPE header=#{request.content_type}"]]
+    # Other fields:
+    # callback_url, optional, string, no default value: URL called after unpackaging
+    # layer, optional, string, no default value: Layer tag to be unpackaged
+    # format, optional, string, default value eu.5gtango: Package format
+  end
+  
+  private
+  def self.valid_package_param?(params)
+    $stderr.puts "params=#{params}"    
+    $stderr.puts "params.key?('package')=#{params.key?('package')}"    
+    params.key?('package') && params['package'].key?(:filename) && params['package'].key?(:tempfile)
   end
 end

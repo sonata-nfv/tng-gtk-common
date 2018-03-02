@@ -32,20 +32,20 @@
 # encoding: utf-8
 require_relative '../spec_helper'
 
-RSpec.describe PackageController, type: :controller do
-  include Rack::Test::Methods
-  def app() PackageController end
-
-  let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
-  let(:dummy_data) { {dummy: 'data'}}
-  it 'Accepts (POST) of multipart packages' do
-    # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
-    post '/', file: file_data
-    #body: { package: file_data}, headers: {'Content-Type'=>'multipart/form-data'}
-    expect(last_response).to be_created
+RSpec.describe ValidatePackageParametersService do
+  let(:no_package_parameter) { {"x"=>"1", "y"=>"2"}}
+  let(:valid_params) { no_package_parameter.merge!({
+    "package"=>{
+      filename: "Gemfile", 
+      type: nil, 
+      name: "package", 
+      tempfile: "#<Tempfile:/var/folders/7j/8jj6x0ld6pz_rhdvblh9jy3r0000gn/T/RackMultipart20180302-20343-199a5yp>",
+      head: "Content-Disposition: form-data; name=\"package\"; filename=\"Gemfile\"\r\n"
+  }})}
+  it 'Validates good params' do
+    expect(ValidatePackageParametersService.call(valid_params)).to be_truthy
   end
-  it 'Rejects non-multipart packages' do
-    post '/', dummy_data, headers: {'Content-Type'=>'application/json'}
-    expect(last_response.status).to eq(400)
+  it 'Rejects missing package' do
+    expect { ValidatePackageParametersService.call(no_package_parameter) }.to raise_error(ArgumentError)
   end
 end
