@@ -33,8 +33,24 @@
 require_relative '../spec_helper'
 
 RSpec.describe ValidatePackageParametersService do
-  let(:no_package_parameter) { {"x"=>"1", "y"=>"2"}}
-  let(:valid_params) { no_package_parameter.merge!({
+  let(:no_package_param) { {"x"=>"1", "y"=>"2"}}
+  let(:no_tempfile_param) {no_package_param.merge!({
+    "package"=>{
+      filename: "Gemfile", 
+      type: nil, 
+      name: "package", 
+      #tempfile: "#<Tempfile:/var/folders/7j/8jj6x0ld6pz_rhdvblh9jy3r0000gn/T/RackMultipart20180302-20343-199a5yp>",
+      head: "Content-Disposition: form-data; name=\"package\"; filename=\"Gemfile\"\r\n"
+  }})}
+  let(:no_filename_param) {no_package_param.merge!({
+    "package"=>{
+      #filename: "Gemfile", 
+      type: nil, 
+      name: "package", 
+      tempfile: "#<Tempfile:/var/folders/7j/8jj6x0ld6pz_rhdvblh9jy3r0000gn/T/RackMultipart20180302-20343-199a5yp>",
+      head: "Content-Disposition: form-data; name=\"package\"; filename=\"Gemfile\"\r\n"
+  }})}
+  let(:valid_params) { no_package_param.merge!({
     "package"=>{
       filename: "Gemfile", 
       type: nil, 
@@ -42,10 +58,17 @@ RSpec.describe ValidatePackageParametersService do
       tempfile: "#<Tempfile:/var/folders/7j/8jj6x0ld6pz_rhdvblh9jy3r0000gn/T/RackMultipart20180302-20343-199a5yp>",
       head: "Content-Disposition: form-data; name=\"package\"; filename=\"Gemfile\"\r\n"
   }})}
+  
   it 'Validates good params' do
     expect(ValidatePackageParametersService.call(valid_params)).to be_truthy
   end
-  it 'Rejects missing package' do
-    expect { ValidatePackageParametersService.call(no_package_parameter) }.to raise_error(ArgumentError)
+  it 'Rejects missing package param' do
+    expect { ValidatePackageParametersService.call(no_package_param) }.to raise_error(ArgumentError)
+  end
+  it 'Rejects missing filename param' do
+    expect { ValidatePackageParametersService.call(no_filename_param) }.to raise_error(ArgumentError)
+  end
+  it 'Rejects missing tempfile param' do
+    expect { ValidatePackageParametersService.call(no_tempfile_param) }.to raise_error(ArgumentError)
   end
 end

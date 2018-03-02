@@ -44,8 +44,6 @@ class ValidatePackageParametersService
   
   private
   def self.valid_package_param?(params)
-    $stderr.puts "params=#{params}"    
-    $stderr.puts "params.key?('package')=#{params.key?('package')}"    
     params.key?('package') && params['package'].key?(:filename) && params['package'].key?(:tempfile)
   end
 end
