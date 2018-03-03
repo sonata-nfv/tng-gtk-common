@@ -40,12 +40,16 @@ RSpec.describe PackageController, type: :controller do
   let(:dummy_data) { {dummy: 'data'}}
   it 'Accepts (POST) of multipart packages' do
     # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
-    post '/', file: file_data
+    post '/', package: file_data
     #body: { package: file_data}, headers: {'Content-Type'=>'multipart/form-data'}
     expect(last_response).to be_created
   end
   it 'Rejects non-multipart packages' do
     post '/', dummy_data, headers: {'Content-Type'=>'application/json'}
     expect(last_response.status).to eq(400)
+  end
+  it 'Rejects uploads without the package parameter' do
+    post '/', no_package: file_data
+    expect(last_response).to be_bad_request
   end
 end
