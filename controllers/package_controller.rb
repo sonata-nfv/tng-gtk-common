@@ -35,11 +35,17 @@ class PackageController < ApplicationController
   before { content_type :json}
   # Receive packages
   post '/?' do
-    
+    ERROR_MSG='Just accepting multipart package file for now'
+    ERROR={status: 400, message: ERROR_MSG}
     $stderr.puts request.content_type
-    halt [400, {}, ['Just accepting multipart package file for now']] unless request.content_type =~ /^multipart\/form-data/
+    halt 400, {}, ERROR.to_json unless request.content_type =~ /^multipart\/form-data/
     
-    $stderr.puts "Params: #{request.params}"
-    halt [201, {}, ["Created with CONTENT_TYPE header=#{request.content_type}"]]
+    begin
+      ValidatePackageParametersService.call request.params
+    rescue ArgumentError => e
+      halt 400, {}, 'Package file parameter is missing'
+    end
+    
+    halt 201, {}, "Created with CONTENT_TYPE header=#{request.content_type}"
   end
 end
