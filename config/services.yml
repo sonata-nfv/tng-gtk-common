@@ -32,7 +32,8 @@
 # encoding: utf-8
 ---
 development: &common_settings
-  unpackager: http://localhost:5000
+  unpackager_url: http://localhost:5000
+  external_callback_url: http://localhost:5000
   logger_level: <%= ENV['LOGGER_LEVEL'] %> 
 
 test:
