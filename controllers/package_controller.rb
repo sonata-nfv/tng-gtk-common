@@ -29,15 +29,17 @@
 # encoding: utf-8
 require 'sinatra'
 require 'json'
+#require_relative '../services/upload_package_service'
 
 class PackageController < ApplicationController
 
   before { content_type :json}
-  # Receive packages
+  CALLBACK_PATH = '/packages/on-change'
+  CALLBACK_URL = 'http://tng-gtk-common'+CALLBACK_PATH
+  ERROR={status: 400, message: 'Just accepting multipart package file for now'}
+  
+  # Accept packages and pass them to the unpackager/validator component
   post '/?' do
-    ERROR_MSG='Just accepting multipart package file for now'
-    ERROR={status: 400, message: ERROR_MSG}
-    $stderr.puts request.content_type
     halt 400, {}, ERROR.to_json unless request.content_type =~ /^multipart\/form-data/
     
     begin
@@ -45,7 +47,18 @@ class PackageController < ApplicationController
     rescue ArgumentError => e
       halt 400, {}, 'Package file parameter is missing'
     end
+    code, body = UploadPackageService.call( request.params, request.content_type, settings.unpackager_url, CALLBACK_URL)
+    case code
+    when 200
+      halt 200, {}, "Unpackaging and validation is running with process id #{body[:package_process_uuid]}"
+    else
+      halt code, {}, "Problems accepting package for unpackaging and validation..."
+    end
+  end
+  
+  post CALLBACK_PATH+'/?' do
+    #, settings.external_callback_url
+    # {"event_name": "string", "package_id": "string","package_location": "string"}
     
-    halt 201, {}, "Created with CONTENT_TYPE header=#{request.content_type}"
   end
 end

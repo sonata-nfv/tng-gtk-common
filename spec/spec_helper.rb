@@ -33,6 +33,7 @@ ENV['RACK_ENV'] = 'test'
 require File.dirname(__FILE__) + '/../controllers/application_controller'
 require File.dirname(__FILE__) + '/../controllers/package_controller'
 require File.dirname(__FILE__) + '/../services/validate_package_parameters_service'
+require File.dirname(__FILE__) + '/../services/upload_package_service'
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods

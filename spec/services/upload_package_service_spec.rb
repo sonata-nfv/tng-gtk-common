@@ -32,29 +32,31 @@
 # encoding: utf-8
 require_relative '../spec_helper'
 
-RSpec.describe PackageController, type: :controller do
+RSpec.describe UploadPackageService do
   include Rack::Test::Methods
-  def app() PackageController end
-
-  # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
-  let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
-  let(:dummy_data) { {dummy: 'data'}}
-  let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
-  
-  context 'Accepts (POST) of multipart packages' do
-    it 'returns 200 when everything was ok' do
-      allow(UploadPackageService).to receive(:call).and_return([200, result])
-      post '/', package: file_data
-      #expect(last_response).to be_created
-      expect(last_response.status).to eq(200)
+  describe '.call' do
+    let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
+    let(:unpackager_url) {'http://example.com/unpackager'}
+    let(:internal_callback_url)  {'http://example.com/internal'}
+    let(:user_callback_url)  {'http://example.com/user'}
+    let(:content_type) {'multipart/form-data'}
+    let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, content_type)}
+    let(:params) { {'callback_url'=> user_callback_url, 'layer'=> 'xyz', 'format'=>''}.merge!({
+      "package"=>{
+        filename: __FILE__, 
+        type: nil, 
+        name: "package", 
+        tempfile: file_data,
+        head: "Content-Disposition: form-data; name=\"package\"; filename=\"Gemfile\"\r\n"
+    }})}
+    
+    it 'calls the unpackager' do
+      stub_request(:post, "http://example.com/unpackager").
+        #with(body: "package=%2Ftmp%2FUIYUYTZT20180306-49778-fcognf&callback_url=http%3A%2F%2Fexample.com%2Finternal&layer=xyz&format=").
+        to_return(status: 200, body: result.to_json, headers: {})
+      code, body = UploadPackageService.call(params, content_type, unpackager_url, internal_callback_url)
+      expect(code).to eq(200)
+      expect(body).to eq(result)
     end
-  end
-  it 'Rejects non-multipart packages' do
-    post '/', dummy_data, headers: {'Content-Type'=>'application/json'}
-    expect(last_response.status).to eq(400)
-  end
-  it 'Rejects uploads without the package parameter' do
-    post '/', no_package: file_data
-    expect(last_response).to be_bad_request
   end
 end

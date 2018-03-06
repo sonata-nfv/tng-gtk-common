@@ -40,9 +40,9 @@ class ApplicationController < Sinatra::Base
   set :bind, '0.0.0.0'
   set :began_at, Time.now.utc
   set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join( [root, 'config', 'services.yml'] )
+  config_file File.join('..', 'config', 'services.yml')
   #set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
 	#enable :logging
   enable :cross_origin
-  
+  #$stderr.puts "Settings:\n  #{settings.environment}\n  #{settings.unpackager_url}"
 end
