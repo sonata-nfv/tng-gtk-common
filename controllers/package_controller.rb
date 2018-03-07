@@ -33,14 +33,21 @@ require 'json'
 
 class PackageController < ApplicationController
 
-  before { content_type :json}
-  CALLBACK_PATH = '/packages/on-change'
+  CALLBACK_PATH = '/on-change'
   CALLBACK_URL = 'http://tng-gtk-common'+CALLBACK_PATH
-  ERROR={status: 400, message: 'Just accepting multipart package file for now'}
+  ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
+  ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
+  OK_PACKAGE_ACCEPTED = "Unpackaging and validation is running with process id %s"
+  ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
+  ERROR_EVENT_DATA_MISSING={error: 'Event received with no data'}
+  ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
+  OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
   
+  before { content_type :json}
+
   # Accept packages and pass them to the unpackager/validator component
   post '/?' do
-    halt 400, {}, ERROR.to_json unless request.content_type =~ /^multipart\/form-data/
+    halt 400, {}, ERROR_PACKAGE_CONTENT_TYPE.to_json unless request.content_type =~ /^multipart\/form-data/
     
     begin
       ValidatePackageParametersService.call request.params
@@ -50,15 +57,22 @@ class PackageController < ApplicationController
     code, body = UploadPackageService.call( request.params, request.content_type, settings.unpackager_url, CALLBACK_URL)
     case code
     when 200
-      halt 200, {}, "Unpackaging and validation is running with process id #{body[:package_process_uuid]}"
+      halt 200, {}, OK_PACKAGE_ACCEPTED % body[:package_process_uuid]
     else
-      halt code, {}, "Problems accepting package for unpackaging and validation..."
+      halt code, {}, ERROR_PACKAGE_ACCEPTATION
     end
   end
   
   post CALLBACK_PATH+'/?' do
-    #, settings.external_callback_url
-    # {"event_name": "string", "package_id": "string","package_location": "string"}
-    
+    halt 400, {}, ERROR_EVENT_CONTENT_TYPE.to_json unless request.content_type =~ /application\/json/
+    event_data = JSON.parse(request.body.read, quirks_mode: true, symbolize_names: true)
+    halt 400, {}, ERROR_EVENT_DATA_MISSING.to_json if event_data.to_s.empty?
+    begin
+      ValidateEventParametersService.call(event_data)
+    rescue ArgumentError => e
+      halt 400, {}, ERROR_EVENT_PARAMETER_MISSING
+    end
+    UploadPackageService.process_callback(event_data, settings.external_callback_url)
+    halt 200, {}, OK_CALLBACK_PROCESSED % event_data[:package_process_uuid]
   end
 end

@@ -34,11 +34,11 @@ require_relative '../spec_helper'
 
 RSpec.describe UploadPackageService do
   include Rack::Test::Methods
+  let(:user_callback_url)  {'http://example.com/user'}
   describe '.call' do
-    let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
+    let (:result) {{ package_process_uuid: "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
     let(:unpackager_url) {'http://example.com/unpackager'}
     let(:internal_callback_url)  {'http://example.com/internal'}
-    let(:user_callback_url)  {'http://example.com/user'}
     let(:content_type) {'multipart/form-data'}
     let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, content_type)}
     let(:params) { {'callback_url'=> user_callback_url, 'layer'=> 'xyz', 'format'=>''}.merge!({
@@ -58,5 +58,33 @@ RSpec.describe UploadPackageService do
       expect(code).to eq(200)
       expect(body).to eq(result)
     end
+  end
+  describe '.process_callback' do
+    let(:params) { {event_name: "evt", package_id: "123", package_location: "xyz", package_process_uuid: "abc"}}
+    let(:external_callback_url) { 'http://example.com/external'}
+    before(:each) {
+      WebMock.stub_request(:post, external_callback_url).
+        with(body: params.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
+        to_return(status: 200, body: "", headers: {})
+      WebMock.stub_request(:post, user_callback_url).
+        with(body: params.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
+        to_return(status: 200, body: "", headers: {})
+    }
+    it 'calls the external callback' do
+      UploadPackageService.class_variable_set :@@internal_callbacks, {'abc'.to_sym => user_callback_url}
+      expect{UploadPackageService.process_callback(params, external_callback_url)}.not_to raise_error
+    end
+    it 'calls the user callback (if exists)' do
+      UploadPackageService.class_variable_set :@@internal_callbacks, {'abc'.to_sym => user_callback_url}
+      expect{UploadPackageService.process_callback(params, external_callback_url)}.not_to raise_error
+    end
+    it 'does not call the user callback when it does not exist' do
+      UploadPackageService.class_variable_set :@@internal_callbacks, {'abc'.to_sym => nil}
+      expect{UploadPackageService.process_callback(params, external_callback_url)}.not_to raise_error
+    end
+    
+    #resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: token.to_json)            
+    #allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp)
+    
   end
 end
