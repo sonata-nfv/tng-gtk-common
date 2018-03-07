@@ -35,10 +35,13 @@ require 'net/http/post/multipart'
 
 class UploadPackageService
   
-  @@internal_calbacks = {}
+  class << self
+    attr_accessor :internal_callbacks
+  end
+  
+  @@internal_callbacks = {}
   
   def self.call(params, content_type, unpackager_url, internal_callback_url)
-    save_user_callback(params['callback_url'])
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(unpackager_url)
     curl.multipart_form_post = true
@@ -49,7 +52,32 @@ class UploadPackageService
       Curl::PostField.content('format', params['format'])
     )
     # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}
-    [curl.response_code.to_i, JSON.parse(curl.body_str, quirks_mode: true)]
+    result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
+    save_user_callback( result[:package_process_uuid], params['callback_url'])
+    [curl.response_code.to_i, result]
+  end
+  
+  def self.process_callback(params, external_callback_url)
+    # Notifies external systems    
+    begin
+      curl = Curl::Easy.http_post( external_callback_url, params.to_json) do |request|
+        request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
+      end
+    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
+      $stderr.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to external callback #{external_callback_url}"]
+    end
+
+    # Notifies user
+    $stderr.puts "package process uuid: #{params[:package_process_uuid]}"
+    user_callback = get_user_callback(params[:package_process_uuid])
+    return if user_callback.to_s.empty?
+    begin
+      resp = Curl::Easy.http_post( user_callback, params.to_json) do |http|
+        http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'
+      end
+    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
+      $stderr.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to user's callback #{user_callback}"]
+    end
   end
   
   private
@@ -61,28 +89,15 @@ class UploadPackageService
     tempfile
   end
   
-  def self.save_user_callback(user_callback)
-    key = SecureRandom.uuid
-    @@internal_calbacks[key.to_sym] = user_callback
-    # callback URL is fixed, key will be used later
-    # /api/v1/packages/on-change
+  def self.save_user_callback(uuid, user_callback)
+    @@internal_callbacks[uuid.to_sym] = user_callback
   end
   
-  def self.swap_to_user(internal_uuid)
-    @@internal_calbacks[internal_uuid]
+  def self.get_user_callback(internal_uuid)
+    @@internal_callbacks[internal_uuid.to_sym]
   end
 
   def self.random_string
     (0...8).map { (65 + rand(26)).chr }.join
   end
 end
-=begin
-    url = URI.parse(unpackager_url)
-    post_req = Net::HTTP::Post.new(url)
-    post_stream = File.open(params[:package][:tempfile].path, 'rb')
-    post_req.content_length = post_stream.size
-    post_req.content_type = content_type
-    post_req.body_stream = post_stream
-    resp = Net::HTTP.new(url.host, url.port).start {|http| http.request(post_req) }
-    [resp.code, {'Content-Type'=>'application/json'}, resp.body]
-=end

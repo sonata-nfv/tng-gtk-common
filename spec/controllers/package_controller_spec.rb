@@ -36,25 +36,34 @@ RSpec.describe PackageController, type: :controller do
   include Rack::Test::Methods
   def app() PackageController end
 
-  # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
-  let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
-  let(:dummy_data) { {dummy: 'data'}}
-  let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
+  describe 'Accepts (POST) uploaded packages' do
+    # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
+    let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
+    let(:dummy_data) { {dummy: 'data'}}
+    let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
   
-  context 'Accepts (POST) of multipart packages' do
-    it 'returns 200 when everything was ok' do
-      allow(UploadPackageService).to receive(:call).and_return([200, result])
-      post '/', package: file_data
-      #expect(last_response).to be_created
-      expect(last_response.status).to eq(200)
+    context 'when they are multipart and' do
+      it 'returning 200 when everything was ok' do
+        allow(UploadPackageService).to receive(:call).and_return([200, result])
+        post '/', package: file_data
+        #expect(last_response).to be_created
+        expect(last_response.status).to eq(200)
+      end
+      it 'returning 400 when something was not ok' do
+        allow(UploadPackageService).to receive(:call).and_return([400, result])
+        post '/', package: file_data
+        expect(last_response.status).to eq(400)
+      end
+    end
+    it 'returning 400 when they are non-multipart packages' do
+      post '/', dummy_data, headers: {'Content-Type'=>'application/json'}
+      expect(last_response.status).to eq(400)
+    end
+    it 'returning 400 when upload parameters miss the package parameter' do
+      post '/', no_package: file_data
+      expect(last_response).to be_bad_request
     end
   end
-  it 'Rejects non-multipart packages' do
-    post '/', dummy_data, headers: {'Content-Type'=>'application/json'}
-    expect(last_response.status).to eq(400)
-  end
-  it 'Rejects uploads without the package parameter' do
-    post '/', no_package: file_data
-    expect(last_response).to be_bad_request
+  describe 'Accepts callbacks' do
   end
 end
