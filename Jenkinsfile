@@ -10,7 +10,7 @@ pipeline {
         }
         stage('tng-gtk-common') {
           steps {
-            sh 'docker build -t registry.sonata-nfv.eu:5000/tng-gtk-common -f ./Dockerfile tng-gtk-common/'
+            sh 'docker build -t registry.sonata-nfv.eu:5000/tng-gtk-common .'
           }
         }
       }
