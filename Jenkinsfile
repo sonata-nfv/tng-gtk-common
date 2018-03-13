@@ -10,7 +10,7 @@ pipeline {
         }
         stage('tng-gtk-common') {
           steps {
-            sh 'docker build -t registry.sonata-nfv.eu:5000/tng-gtk-common -f ./Dockerfile tng-gtk-common/'
+            sh 'docker build -t registry.sonata-nfv.eu:5000/tng-gtk-common .'
           }
         }
       }
@@ -49,7 +49,7 @@ pipeline {
         stage('Deploying') {
           steps {
             sh 'rm -rf tng-devops || true'
-            sh 'git clone https://github.com/sonata-nfv/tng-gtk-common.git'
+            sh 'git clone https://github.com/sonata-nfv/tng-devops.git'
             dir(path: 'tng-devops') {
               sh 'ansible-playbook roles/sp.yml -i environments -e "target=pre-int-sp host_key_checking=False"'
             }
@@ -63,7 +63,10 @@ pipeline {
         echo 'Performing Smoke Tests....'
       }
     }
-    stage('Pushing') {
+    stage('Promoting containers to integration env') {
+      when {
+         branch 'master'
+      }
       parallel {
         stage('Publishing containers to int') {
           steps {
