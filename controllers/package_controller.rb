@@ -37,11 +37,11 @@ class PackageController < ApplicationController
   CALLBACK_URL = 'http://tng-gtk-common'+CALLBACK_PATH
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
-  OK_PACKAGE_ACCEPTED = "Unpackaging and validation is running with process id %s"
   ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
   ERROR_EVENT_DATA_MISSING={error: 'Event received with no data'}
   ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
   OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
+  OK_PACKAGE_ACCEPTED="{'package_process_uuid':'%s', 'package_process_status':'%s'}"
   
   before { content_type :json}
 
@@ -57,7 +57,7 @@ class PackageController < ApplicationController
     code, body = UploadPackageService.call( request.params, request.content_type, settings.unpackager_url, CALLBACK_URL)
     case code
     when 200
-      halt 200, {}, OK_PACKAGE_ACCEPTED % body[:package_process_uuid]
+      halt 200, OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]]
     else
       halt code, {}, ERROR_PACKAGE_ACCEPTATION
     end
@@ -74,5 +74,9 @@ class PackageController < ApplicationController
     end
     UploadPackageService.process_callback(event_data, settings.external_callback_url)
     halt 200, {}, OK_CALLBACK_PROCESSED % event_data[:package_process_uuid]
+  end
+  
+  get '/?' do
+    halt 501, {}, ["GET /api/v3/packages was not yet implemented"]
   end
 end
