@@ -46,7 +46,8 @@ RSpec.describe PackageController, type: :controller do
     context 'when they are multipart and' do
       it 'returning 200 when everything was ok' do
         #allow(ENV).to receive(:[]).with("UNPACKAGER_URL").and_return('http://example.com')
-        ENV["UNPACKAGER_URL"]='http://example.com'
+        #ENV["UNPACKAGER_URL"]='http://example.com'
+        stub_const('ENV', ENV.to_hash.merge('UNPACKAGER_URL' => 'http://example.com'))
         allow(ValidatePackageParametersService).to receive(:call)
         allow(UploadPackageService).to receive(:call).and_return([200, result])
         post '/', package: file_data
