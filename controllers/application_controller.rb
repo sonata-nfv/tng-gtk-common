@@ -30,19 +30,21 @@
 require 'sinatra/base'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
-# require 'sinatra/logger'
+require 'logger'
 
 class ApplicationController < Sinatra::Base
-  register Sinatra::ConfigFile
+
+  LOGGER_LEVEL= ENV.fetch('LOGGER_LEVEL', 'info')
+  set :began_at, Time.now.utc
+  
   register Sinatra::CrossOrigin
-  #register Sinatra::Logger
+  msg = self.name
 
   set :bind, '0.0.0.0'
   set :began_at, Time.now.utc
-  set :environment, ENV['RACK_ENV'] || :development
-  config_file File.join('..', 'config', 'services.yml')
-  #set :logger_level, (settings.logger_level ||= 'debug').to_sym # can be debug, fatal, error, warn, or info
-	#enable :logging
+  set :environment, ENV.fetch('RACK_ENV', :development)
   enable :cross_origin
-  #$stderr.puts "Settings:\n  #{settings.environment}\n  #{settings.unpackager_url}"
+  enable :logging
+  set :logger, Logger.new(STDERR)
+  set :logger_level, LOGGER_LEVEL.to_sym
 end

@@ -29,6 +29,7 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to
 ## acknowledge the contributions of their colleagues of the 5GTANGO
 ## partner consortium (www.5gtango.eu).
+# frozen_string_literal: true
 # encoding: utf-8
 require_relative '../spec_helper'
 
@@ -40,10 +41,14 @@ RSpec.describe PackageController, type: :controller do
     # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
     let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
     let(:dummy_data) { {dummy: 'data'}}
-    let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}}
+    let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", 'package_status' => 'received'}}
   
     context 'when they are multipart and' do
       it 'returning 200 when everything was ok' do
+        #allow(ENV).to receive(:[]).with("UNPACKAGER_URL").and_return('http://example.com')
+        #ENV["UNPACKAGER_URL"]='http://example.com'
+        stub_const('ENV', ENV.to_hash.merge('UNPACKAGER_URL' => 'http://example.com'))
+        allow(ValidatePackageParametersService).to receive(:call)
         allow(UploadPackageService).to receive(:call).and_return([200, result])
         post '/', package: file_data
         #expect(last_response).to be_created

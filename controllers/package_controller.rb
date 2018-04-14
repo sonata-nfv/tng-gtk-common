@@ -29,42 +29,52 @@
 # encoding: utf-8
 require 'sinatra'
 require 'json'
+require 'logger'
 #require_relative '../services/upload_package_service'
 
 class PackageController < ApplicationController
 
-  CALLBACK_PATH = '/on-change'
-  CALLBACK_URL = 'http://tng-gtk-common'+CALLBACK_PATH
+  INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', '')
+  EXTERNAL_CALLBACK_URL = ENV.fetch('EXTERNAL_CALLBACK_URL', '')
+  OK_PACKAGE_ACCEPTED="{'package_process_uuid':'%s', 'package_process_status':'%s'}"
+  ERROR_UNPACKAGER_URL_NOT_PROVIDED={error: 'You must provide the un-packager URL as the UNPACKAGER_URL environment variable'}
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
-  OK_PACKAGE_ACCEPTED = "Unpackaging and validation is running with process id %s"
-  ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
-  ERROR_EVENT_DATA_MISSING={error: 'Event received with no data'}
-  ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
-  OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
+
+  settings.logger.info(self.name) {"Started at #{settings.began_at}"}
   
   before { content_type :json}
 
   # Accept packages and pass them to the unpackager/validator component
   post '/?' do
+    # RESET = 'reset' unless const_defined?(:RESET)
+    UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
+
     halt 400, {}, ERROR_PACKAGE_CONTENT_TYPE.to_json unless request.content_type =~ /^multipart\/form-data/
+    halt 400, {}, ERROR_UNPACKAGER_URL_NOT_PROVIDED.to_json if UNPACKAGER_URL == ''
     
     begin
       ValidatePackageParametersService.call request.params
     rescue ArgumentError => e
       halt 400, {}, 'Package file parameter is missing'
     end
-    code, body = UploadPackageService.call( request.params, request.content_type, settings.unpackager_url, CALLBACK_URL)
+    code, body = UploadPackageService.call( request.params, request.content_type, UNPACKAGER_URL, INTERNAL_CALLBACK_URL)
     case code
     when 200
-      halt 200, {}, OK_PACKAGE_ACCEPTED % body[:package_process_uuid]
+      halt 200, {}, OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]]
     else
-      halt code, {}, ERROR_PACKAGE_ACCEPTATION
+      halt code, {}, ERROR_PACKAGE_ACCEPTATION.to_json
     end
   end
   
-  post CALLBACK_PATH+'/?' do
+  post '/on-change/?' do
+    ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
+    ERROR_EVENT_DATA_MISSING={error: 'Event received with no data'}
+    ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
+    OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
+
     halt 400, {}, ERROR_EVENT_CONTENT_TYPE.to_json unless request.content_type =~ /application\/json/
+    # should be {"event_name": "string", "package_id": "string", "package_location": "string"}
     event_data = JSON.parse(request.body.read, quirks_mode: true, symbolize_names: true)
     halt 400, {}, ERROR_EVENT_DATA_MISSING.to_json if event_data.to_s.empty?
     begin
@@ -72,7 +82,11 @@ class PackageController < ApplicationController
     rescue ArgumentError => e
       halt 400, {}, ERROR_EVENT_PARAMETER_MISSING
     end
-    UploadPackageService.process_callback(event_data, settings.external_callback_url)
+    UploadPackageService.process_callback(event_data, EXTERNAL_CALLBACK_URL) unless EXTERNAL_CALLBACK_URL == ''
     halt 200, {}, OK_CALLBACK_PROCESSED % event_data[:package_process_uuid]
+  end
+  
+  get '/?' do
+    halt 501, {}, ["GET /api/v3/packages was not yet implemented"]
   end
 end
