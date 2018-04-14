@@ -49,14 +49,21 @@ class UploadPackageService
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(unpackager_url)
     curl.multipart_form_post = true
-    curl.http_post(
-      Curl::PostField.file('package', tempfile.path),
-      Curl::PostField.content('callback_url', internal_callback_url),
-      Curl::PostField.content('layer', params['layer']),
-      Curl::PostField.content('format', params['format'])
-    )
-    # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}
-    result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
+    STDERR.puts "Unpackager URL =#{unpackager_url}"
+    begin
+      curl.http_post(
+        Curl::PostField.file('package', tempfile.path),
+        Curl::PostField.content('callback_url', internal_callback_url),
+        Curl::PostField.content('layer', params.fetch('layer', '')),
+        Curl::PostField.content('format', params.fetch('format', ''))
+      )
+      # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}
+      result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
+    rescue Exception => e
+        STDERR.puts e.message  
+        STDERR.puts e.backtrace.inspect
+        return [ 500, "Internal Server Error"]
+    end
     save_user_callback( result[:package_process_uuid], params['callback_url'])
     [curl.response_code.to_i, result]
   end

@@ -10,4 +10,6 @@ COPY . /app
 EXPOSE 5000
 ENV PORT 5000
 ENV ROUTES_FILE=sp_routes.yml
+ENV UNPACKAGER_URL=http://tng-sdk-package:5099/api/v1/packages
+ENV EXTERNAL_CALLBACK_URL=http://tng-vnv-lcm:6100/api/v1/packages/on-change
 CMD ["bundle", "exec", "rackup", "-p", "5000", "--host", "0.0.0.0"]
