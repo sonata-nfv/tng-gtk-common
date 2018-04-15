@@ -29,8 +29,18 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to
 ## acknowledge the contributions of their colleagues of the 5GTANGO
 ## partner consortium (www.5gtango.eu).
+# frozen_string_literal: true
 # encoding: utf-8
-require 'sinatra/base'
-Dir.glob('./{services,controllers}/*.rb').each { |file| require file }
-map('/packages') { run PackageController } 
-map('/') { run RootController }
+require_relative '../spec_helper'
+
+RSpec.describe RootController, type: :controller do
+  include Rack::Test::Methods
+  def app() RootController end
+
+  describe 'Accepts access to roo (/)' do
+    it 'returning 200' do
+      get '/'
+      expect(last_response.status).to eq(200)
+    end
+  end
+end
