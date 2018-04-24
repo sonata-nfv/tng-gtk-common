@@ -43,13 +43,19 @@ class UploadPackageService
     attr_accessor :internal_callbacks
   end
   
+  EXTERNAL_CALLBACK_URL = ENV.fetch('EXTERNAL_CALLBACK_URL', '')
+  UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
+  ERROR_UNPACKAGER_URL_NOT_PROVIDED={error: 'You must provide the un-packager URL as the UNPACKAGER_URL environment variable'}
+  
   @@internal_callbacks = {}
   
-  def self.call(params, content_type, unpackager_url, internal_callback_url)
+  def self.call(params, content_type, internal_callback_url)
+    return [400, ERROR_UNPACKAGER_URL_NOT_PROVIDED.to_json] if UNPACKAGER_URL == ''
+    STDERR.puts "Unpackager URL =#{UNPACKAGER_URL}"
+    
     tempfile = save_file params['package'][:tempfile]
-    curl = Curl::Easy.new(unpackager_url)
+    curl = Curl::Easy.new(UNPACKAGER_URL)
     curl.multipart_form_post = true
-    STDERR.puts "Unpackager URL =#{unpackager_url}"
     begin
       curl.http_post(
         Curl::PostField.file('package', tempfile.path),
@@ -57,41 +63,77 @@ class UploadPackageService
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', ''))
       )
-      # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e"}
-      result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
+      # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
+      body = curl.body_str
+      result = JSON.parse(body, quirks_mode: true, symbolize_names: true)
+      STDERR.puts "Got result = #{result} from #{}"
+      result
     rescue Exception => e
         STDERR.puts e.message  
         STDERR.puts e.backtrace.inspect
         return [ 500, "Internal Server Error"]
     end
+    STDERR.puts "Got result = #{result}"
     save_user_callback( result[:package_process_uuid], params['callback_url'])
     [curl.response_code.to_i, result]
   end
   
-  def self.process_callback(params, external_callback_url)
-    # Notifies external systems    
+  def self.process_callback(params)
+    save_result(params)
+    notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
+    notify_user(params)
+  end
+  
+  def self.fetch_status(process_id)
     begin
-      curl = Curl::Easy.http_post( external_callback_url, params.to_json) do |request|
+      curl = Curl::Easy.http_get( UNPACKAGER_URL+'/'+process_id) do |request|
+        request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
+      end
+      result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
+      case curl.response_code.to_i
+      when 200
+        result
+      else
+        nil
+      end
+    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
+      STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to package processing status from #{UNPACKAGER_URL}"]
+      nil
+    end
+  end
+  
+  # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
+  # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
+  
+  private
+  def self.save_result(result)
+    process_id = result[:package_process_uuid]
+    STDERR.puts "Save result: @@internal_callbacks['#{process_id}']= #{@@internal_callbacks[process_id]}"
+    @@internal_callbacks[process_id][:result]= result
+  end
+  
+  def self.notify_external_systems(params)
+    begin
+      curl = Curl::Easy.http_post( EXTERNAL_CALLBACK_URL, params.to_json) do |request|
         request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
       end
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
-      $stderr.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to external callback #{external_callback_url}"]
+      STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to external callback #{EXTERNAL_CALLBACK_URL}"]
     end
-
-    # Notifies user
-    $stderr.puts "package process uuid: #{params[:package_process_uuid]}"
-    user_callback = get_user_callback(params[:package_process_uuid])
+  end
+  
+  def self.notify_user(params)
+    user_callback = @@internal_callbacks[params[:package_process_uuid]][:user_callback]
     return if user_callback.to_s.empty?
     begin
       resp = Curl::Easy.http_post( user_callback, params.to_json) do |http|
         http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'
       end
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
-      $stderr.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to user's callback #{user_callback}"]
+      STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to user's callback #{user_callback}"]
     end
   end
-  
-  private
+
   def self.save_file(io)
     tempfile = Tempfile.new(random_string, '/tmp')
     io.rewind
@@ -101,13 +143,9 @@ class UploadPackageService
   end
   
   def self.save_user_callback(uuid, user_callback)
-    @@internal_callbacks[uuid.to_sym] = user_callback
+    @@internal_callbacks[uuid.to_sym] = { user_callback: user_callback, result: nil}
   end
   
-  def self.get_user_callback(internal_uuid)
-    @@internal_callbacks[internal_uuid.to_sym]
-  end
-
   def self.random_string
     (0...8).map { (65 + rand(26)).chr }.join
   end

@@ -41,14 +41,11 @@ RSpec.describe PackageController, type: :controller do
     # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/
     let(:file_data) { Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
     let(:dummy_data) { {dummy: 'data'}}
-    let (:result) {{ 'package_process_uuid'=> "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", 'package_status' => 'received'}}
+    let (:result) {{ package_process_uuid: "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", package_status: 'waiting'}}
   
     context 'when they are multipart and' do
       it 'returning 200 when everything was ok' do
-        #allow(ENV).to receive(:[]).with("UNPACKAGER_URL").and_return('http://example.com')
-        #ENV["UNPACKAGER_URL"]='http://example.com'
-        stub_const('ENV', ENV.to_hash.merge('UNPACKAGER_URL' => 'http://example.com'))
-        allow(ValidatePackageParametersService).to receive(:call)
+        allow(ValidatePackageParametersService).to receive(:call).and_return(true)
         allow(UploadPackageService).to receive(:call).and_return([200, result])
         post '/', package: file_data
         #expect(last_response).to be_created
@@ -65,10 +62,37 @@ RSpec.describe PackageController, type: :controller do
       expect(last_response.status).to eq(400)
     end
     it 'returning 400 when upload parameters miss the package parameter' do
+      post '/'
+      expect(last_response.status).to eq(400)
+    end
+    it "returning 400 when upload parameters is not 'package'" do
       post '/', no_package: file_data
-      expect(last_response).to be_bad_request
+      expect(last_response.status).to eq(400)
     end
   end
   describe 'Accepts callbacks' do
   end
+  describe 'Accepts status queries' do
+    let(:possible_status) { ["waiting", "running", "failed", "success"]}
+    let(:valid_processing_uuid) {SecureRandom.uuid}
+    let(:status_message) { {package_process_uuid: valid_processing_uuid, status: "waiting", error_msg: "Whatever"}}
+    let(:invalid_processing_uuid) {'abc123'}
+    let(:unknown_processing_uuid) {SecureRandom.uuid}
+    it "rejecting (400) those with an invalid UUDI" do
+      get '/status/'+invalid_processing_uuid
+      expect(last_response.status).to eq(400)
+    end
+    it "rejecting (404) an unknow processing UUID" do
+      allow(UploadPackageService).to receive(:fetch_status).with(unknown_processing_uuid).and_return(nil)
+      get '/status/'+unknown_processing_uuid
+      expect(last_response.status).to eq(404)
+    end
+    it "accepting (200) valid requests and returning expected data" do
+      allow(UploadPackageService).to receive(:fetch_status).with(valid_processing_uuid).and_return(status_message)
+      get '/status/'+valid_processing_uuid
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(status_message.to_json)
+    end
+  end
+  
 end
