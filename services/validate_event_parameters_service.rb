@@ -32,8 +32,18 @@
 # frozen_string_literal: true
 # encoding: utf-8
 class ValidateEventParametersService
+  ERROR_EVENT_DATA_NOT_VALID="Event data not valid: %s"
   def self.call(params)
-    # {"event_name": "string", "package_id": "string","package_location": "string", "package_process_uuid": "string"}
+    
+    return false if params.to_s.empty?
+    # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
+    # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
+    begin
+      JSON.parse(params, quirks_mode: true, symbolize_names: true)
+    rescue JSON::ParserError => e
+      raise ArgumentError.new(ERROR_EVENT_DATA_NOT_VALID % params)
+    end
+    
     params.each do |param|
       raise ArgumentError.new(param.to_s.split('_').join(' ').capitalize+' is missing') if param.empty?
     end

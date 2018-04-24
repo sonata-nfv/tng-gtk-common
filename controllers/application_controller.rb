@@ -47,4 +47,6 @@ class ApplicationController < Sinatra::Base
   enable :logging
   set :logger, Logger.new(STDERR)
   set :logger_level, LOGGER_LEVEL.to_sym
+  
+  before { content_type :json}
 end
