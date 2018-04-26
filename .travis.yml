@@ -33,8 +33,4 @@
 language: ruby
 rvm:
   - "2.4.3"
-env:
-  - RACK_ENV=test
-  - CATALOGUE_URL=http://example.com/catalogue
-  - UNPACKAGER_URL=http://example.com/unpackager
-script: bundle install && bundle exec rspec spec/
+script: bundle install && RACK_ENV=test CATALOGUE_URL=http://example.com/catalogue UNPACKAGER_URL=http://example.com/unpackager bundle exec rspec spec/
