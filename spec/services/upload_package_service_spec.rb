@@ -34,7 +34,6 @@
 require_relative '../spec_helper'
 
 RSpec.describe UploadPackageService do
-  include Rack::Test::Methods
   let(:user_callback_url)  {'http://example.com/user'}
   let(:external_callback_url) { 'http://example.com/external'}
   let(:unpackager_url) {'http://example.com/unpackager'}
