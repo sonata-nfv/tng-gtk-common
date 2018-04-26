@@ -94,5 +94,29 @@ RSpec.describe PackageController, type: :controller do
       expect(last_response.body).to eq(status_message.to_json)
     end
   end
-  
+  describe 'Accepts packages queries' do
+    let(:package_1_metadata) {{vendor: '5gtango', name: 'whatever', version: '0.0.1'}}
+    let(:package_2_metadata) {{vendor: '5gtango', name: 'whatever', version: '0.0.2'}}
+    
+    it 'adding default parameters for page size and number' do
+      allow(FetchPackagesService).to receive(:metadata).with({}).and_return([package_1_metadata, package_2_metadata])
+      get '/'
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq([package_1_metadata, package_2_metadata].to_json)
+    end
+    
+    it 'returning not found (404) when an error occurs' do
+      allow(FetchPackagesService).to receive(:metadata).with({}).and_return(nil)
+      get '/'
+      expect(last_response.status).to eq(404)
+    end
+    
+    it 'returning Ok (200) and an empty array when no package is found' do
+      allow(FetchPackagesService).to receive(:metadata).with({}).and_return([])
+      get '/'
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq([].to_json)
+    end
+        
+  end
 end

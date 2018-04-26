@@ -35,6 +35,7 @@ require File.dirname(__FILE__) + '/../controllers/package_controller'
 require File.dirname(__FILE__) + '/../controllers/root_controller'
 require File.dirname(__FILE__) + '/../services/validate_package_parameters_service'
 require File.dirname(__FILE__) + '/../services/upload_package_service'
+require File.dirname(__FILE__) + '/../services/fetch_packages_service'
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
