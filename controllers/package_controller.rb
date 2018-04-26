@@ -88,10 +88,21 @@ class PackageController < ApplicationController
   end
 
   get '/?' do 
-    # curl http://localhost:4011/catalogues/api/v2/packages
-    halt 501, {}, ["GET /api/v3/packages was not yet implemented"]
+    captures=params.delete('captures') if params.key? 'captures'
+    result = FetchPackagesService.metadata(params)
+    halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.to_s.empty? # covers nil
+    #halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.empty? 
+    halt 200, {}, result.to_json
   end
   
+  get '/:package_uuid?' do 
+    halt 501, {}, ['.../api/v3/packages/:package_uuid is not implemented yet']
+  end
+  
+  get '/:package_uuid/file/?' do 
+    halt 501, {}, ['.../api/v3/packages/:package_uuid/file is not implemented yet']
+  end
+
   private
   def uuid_valid?(uuid)
     return true if (uuid =~ /[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}/) == 0
