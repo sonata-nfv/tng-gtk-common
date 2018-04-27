@@ -35,8 +35,10 @@ require_relative '../spec_helper'
 
 RSpec.describe FetchPackagesService do
   let(:catalogue_url)  {FetchPackagesService::CATALOGUE_URL+'/packages'}
-  let(:package_1_metadata) {{vendor: '5gtango', name: 'whatever', version: '0.0.1'}}
-  let(:package_2_metadata) {{vendor: '5gtango', name: 'whatever', version: '0.0.2'}}
+  let(:uuid_1) {SecureRandom.uuid}
+  let(:uuid_2) {SecureRandom.uuid}
+  let(:package_1_metadata) {{package_uuid: uuid_1, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+  let(:package_2_metadata) {{package_uuid: uuid_2, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.2'}}}
   let(:packages_metadata) {[package_1_metadata,package_2_metadata]}
   
   describe '.metadata' do    
@@ -54,6 +56,11 @@ RSpec.describe FetchPackagesService do
       stub_request(:get, catalogue_url+'?page_number=0&page_size=1').
         to_return(status: 200, body: [package_1_metadata].to_json, headers: {'content-type' => 'application/json'})
       expect(described_class.metadata({page_size: 1})).to eq([package_1_metadata])
+    end
+    it 'calls the Catalogue with the passed UUID' do      
+      stub_request(:get, catalogue_url+'/'+uuid_1).
+        to_return(status: 200, body: package_1_metadata.to_json, headers: {'content-type' => 'application/json'})
+      expect(described_class.metadata({package_uuid: uuid_1})).to eq(package_1_metadata)
     end
   end
 end

@@ -117,6 +117,17 @@ RSpec.describe PackageController, type: :controller do
       expect(last_response.status).to eq(200)
       expect(last_response.body).to eq([].to_json)
     end
-        
+  end
+  describe 'Accepts single package query' do
+    let(:uuid) {SecureRandom.uuid}
+    let(:package_metadata) { {package_uuid: uuid, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+    it 'returning Ok (200) and the package meta-data when package is found' do
+      allow(FetchPackagesService).to receive(:metadata).with({'package_uuid'=> uuid}).and_return(package_metadata)
+      get '/'+uuid
+      STDERR.puts "uuid=#{uuid}"
+      STDERR.puts "last_response=#{last_response.inspect}"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to eq(package_metadata.to_json)
+    end
   end
 end
