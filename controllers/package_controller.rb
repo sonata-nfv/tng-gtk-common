@@ -91,12 +91,14 @@ class PackageController < ApplicationController
     captures=params.delete('captures') if params.key? 'captures'
     result = FetchPackagesService.metadata(params)
     halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.to_s.empty? # covers nil
-    #halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.empty? 
     halt 200, {}, result.to_json
   end
   
   get '/:package_uuid?' do 
-    halt 501, {}, ['.../api/v3/packages/:package_uuid is not implemented yet']
+    captures=params.delete('captures') if params.key? 'captures'
+    result = FetchPackagesService.metadata(params)
+    halt 404, {}, {error: "No package with UUID '#{params}' was found"}.to_json if result.to_s.empty? # covers nil
+    halt 200, {}, result.to_json
   end
   
   get '/:package_uuid/file/?' do 

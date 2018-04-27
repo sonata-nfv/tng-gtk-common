@@ -40,19 +40,15 @@ class FetchPackagesService
   CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
     
   def self.metadata(params)
-    
     return [400, {error: 'The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'}.to_json] if CATALOGUE_URL == ''
-    STDERR.puts "Catalogue URL=#{CATALOGUE_URL}"
     STDERR.puts "params=#{params}"
-        
     begin
-      if params.key?(:uuid)
-        uri = URI.parse(CATALOGUE_URL+'/packages/'+params[:uuid])
+      if params.key?(:package_uuid)
+        uri = URI.parse(CATALOGUE_URL+'/packages/'+params[:package_uuid])
+        STDERR.puts "uri=#{uri}"
       else
         uri = URI.parse(CATALOGUE_URL+'/packages')
-        STDERR.puts "sanitized params=#{sanitize(params)}"
         uri.query = URI.encode_www_form(sanitize(params))
-        STDERR.puts "uri=#{uri}"
       end
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
@@ -62,8 +58,8 @@ class FetchPackagesService
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, e.message]
-      nil
     end
+    nil
   end
   
   private

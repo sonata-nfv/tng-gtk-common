@@ -51,7 +51,6 @@ class UploadPackageService
   
   def self.call(params, content_type, internal_callback_url)
     return [400, ERROR_UNPACKAGER_URL_NOT_PROVIDED.to_json] if UNPACKAGER_URL == ''
-    STDERR.puts "Unpackager URL =#{UNPACKAGER_URL}"
     
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(UNPACKAGER_URL)
@@ -66,14 +65,12 @@ class UploadPackageService
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       body = curl.body_str
       result = JSON.parse(body, quirks_mode: true, symbolize_names: true)
-      STDERR.puts "Got result = #{result} from #{}"
       result
     rescue Exception => e
         STDERR.puts e.message  
         STDERR.puts e.backtrace.inspect
         return [ 500, "Internal Server Error"]
     end
-    STDERR.puts "Got result = #{result}"
     save_user_callback( result[:package_process_uuid], params['callback_url'])
     [curl.response_code.to_i, result]
   end
@@ -108,7 +105,6 @@ class UploadPackageService
   private
   def self.save_result(result)
     process_id = result[:package_process_uuid]
-    STDERR.puts "Save result: @@internal_callbacks['#{process_id}']= #{@@internal_callbacks[process_id]}"
     @@internal_callbacks[process_id][:result]= result
   end
   
