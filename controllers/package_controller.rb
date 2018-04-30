@@ -54,12 +54,8 @@ class PackageController < ApplicationController
       halt 400, {}, 'Package file parameter is missing'
     end
     code, body = UploadPackageService.call( request.params, request.content_type, INTERNAL_CALLBACK_URL)
-    case code
-    when 200
-      halt 200, {}, OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]]
-    else
-      halt code, {}, ERROR_PACKAGE_ACCEPTATION.to_json
-    end
+    halt 200, {}, OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]] if code == 200
+    halt code, {}, ERROR_PACKAGE_ACCEPTATION.to_json
   end
   
   # Callback for the tng-sdk-packager to notify the result of processing
