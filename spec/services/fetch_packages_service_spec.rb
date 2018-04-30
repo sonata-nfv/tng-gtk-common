@@ -34,33 +34,75 @@
 require_relative '../spec_helper'
 
 RSpec.describe FetchPackagesService do
-  let(:catalogue_url)  {FetchPackagesService::CATALOGUE_URL+'/packages'}
-  let(:uuid_1) {SecureRandom.uuid}
-  let(:uuid_2) {SecureRandom.uuid}
-  let(:package_1_metadata) {{package_uuid: uuid_1, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
-  let(:package_2_metadata) {{package_uuid: uuid_2, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.2'}}}
-  let(:packages_metadata) {[package_1_metadata,package_2_metadata]}
+  let(:catalogue_url)  {FetchPackagesService::CATALOGUE_URL}
+  
+  it 'breaks unless CATALOGUE_URL ENV message is defined' do
+    expect(described_class.const_defined?(:CATALOGUE_URL)).to be_truthy   
+  end
   
   describe '.metadata' do    
+    let(:uuid_1) {SecureRandom.uuid}
+    let(:uuid_2) {SecureRandom.uuid}
+    let(:package_1_metadata) {{package_uuid: uuid_1, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+    let(:package_2_metadata) {{package_uuid: uuid_2, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.2'}}}
+    let(:packages_metadata) {[package_1_metadata,package_2_metadata]}
+    let(:default_page_size) {ENV.fetch('DEFAULT_PAGE_SIZE', '100')}
+    let(:default_page_number) {ENV.fetch('DEFAULT_PAGE_NUMBER', '0')}
     it 'calls the Catalogue with default params' do      
-      stub_request(:get, catalogue_url+'?page_number=0&page_size=100').
-        to_return(status: 200, body: packages_metadata.to_json, headers: {'content-type' => 'application/json'})
+      stub_request(:get, catalogue_url+'/packages?page_number='+default_page_number+'&page_size='+default_page_size).to_return(status: 200, body: packages_metadata.to_json, headers: {'content-type' => 'application/json'})
       expect(described_class.metadata({})).to eq([package_1_metadata, package_2_metadata])
     end
     it 'calls the Catalogue with default page_size when only page_number is passed' do      
-      stub_request(:get, catalogue_url+'?page_number=1&page_size=100').
-        to_return(status: 200, body: [].to_json, headers: {'content-type' => 'application/json'})
+      stub_request(:get, catalogue_url+'/packages?page_number=1&page_size='+default_page_size).to_return(status: 200, body: [].to_json, headers: {'content-type' => 'application/json'})
       expect(described_class.metadata({page_number: 1})).to eq([])
     end
     it 'calls the Catalogue with default page_number when only page_size is passed' do      
-      stub_request(:get, catalogue_url+'?page_number=0&page_size=1').
-        to_return(status: 200, body: [package_1_metadata].to_json, headers: {'content-type' => 'application/json'})
+      stub_request(:get, catalogue_url+'/packages?page_number='+default_page_number+'&page_size=1').to_return(status: 200, body: [package_1_metadata].to_json, headers: {'content-type' => 'application/json'})
       expect(described_class.metadata({page_size: 1})).to eq([package_1_metadata])
     end
-    it 'calls the Catalogue with the passed UUID' do      
-      stub_request(:get, catalogue_url+'/'+uuid_1).
-        to_return(status: 200, body: package_1_metadata.to_json, headers: {'content-type' => 'application/json'})
-      expect(described_class.metadata({package_uuid: uuid_1})).to eq(package_1_metadata)
+    context 'calls the Catalogue with the passed UUID' do
+      it 'return Ok (200) for existing UUIDs' do      
+        stub_request(:get, catalogue_url+'/packages/'+uuid_1).to_return(status: 200, body: package_1_metadata.to_json, headers: {'content-type' => 'application/json'})
+        expect(described_class.metadata({package_uuid: uuid_1})).to eq(package_1_metadata)
+      end
+      it 'return Not Found (404) for non-existing UUIDs' do      
+        stub_request(:get, catalogue_url+'/packages/'+uuid_1).to_return(status: 404, body: '', headers: {'content-type' => 'application/json'})
+        expect(described_class.metadata({package_uuid: uuid_1})).to be_falsy
+      end
     end
+  end
+  
+  describe '.package_file' do
+    let(:package_uuid) {SecureRandom.uuid}
+    let(:package_file_uuid) {SecureRandom.uuid}
+    let(:package_file_name) {'whatever_name.tgo'}
+    let(:incomplete_package_metadata) {{package_uuid: package_uuid, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+    let(:file_data) { File.open('spec/fixtures/5gtango-ns-package-example.tgo', 'rb')}#Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
+    it 'rejects calls with non-existing packages' do
+      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).and_return(nil)
+      expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
+    end
+    #File.open('/tmp/response_body.txt', 'w') { |f| f.puts 'abc' }
+    #stub_request(:get, catalogue_url).to_return(body: file_data, status: 200)
+    #Net::HTTP.get('www.example.com', '/')
+    it 'rejects calls for existing packages without son_package_uuid defined' do
+      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).
+        and_return(incomplete_package_metadata.merge!({son_package_uuid: ''}))
+      expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
+    end
+    # 
+    it 'rejects calls for existing packages without grid_fs_name defined' do
+      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).
+        and_return(incomplete_package_metadata.merge!({son_package_uuid: package_file_uuid, grid_fs_name: ''}))
+      expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
+    end
+    it 'accepts calls for existing packages with grid_fs_name defined, saves them and returns file name' do
+      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).
+        and_return(incomplete_package_metadata.merge!({son_package_uuid: package_file_uuid, grid_fs_name: package_file_name}))
+      WebMock.stub_request(:get, catalogue_url+'/tgo-packages/'+package_file_uuid).to_return(body: file_data, status: 200)
+      expect(described_class.package_file({'package_uuid'=> package_uuid})).to eq(package_file_name)
+    end
+    #
+    #  and_return(incomplete_package_metadata.merge!({son_package_uuid: package_file_uuid, grid_fs_name: ''}))
   end
 end
