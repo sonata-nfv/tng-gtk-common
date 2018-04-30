@@ -124,10 +124,26 @@ RSpec.describe PackageController, type: :controller do
     it 'returning Ok (200) and the package meta-data when package is found' do
       allow(FetchPackagesService).to receive(:metadata).with({'package_uuid'=> uuid}).and_return(package_metadata)
       get '/'+uuid
-      STDERR.puts "uuid=#{uuid}"
-      STDERR.puts "last_response=#{last_response.inspect}"
       expect(last_response.status).to eq(200)
       expect(last_response.body).to eq(package_metadata.to_json)
+    end
+  end
+  describe 'Accepts single package download query' do
+    let(:package_uuid) {SecureRandom.uuid}
+    let(:package_file_uuid) {SecureRandom.uuid}
+    let(:package_file_name) {'whatever_name.tgo'}
+    let(:package_metadata) { {package_uuid: uuid, son_package_uuid: package_file_uuid, grid_fs_name: package_file_name, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+    it 'returning Ok (200) and the package file when package is found' do
+      allow(FetchPackagesService).to receive(:package_file).with({'package_uuid'=> package_uuid}).and_return(package_file_name)
+      get '/'+package_uuid+'/package-file'
+      expect(last_response.status).to eq(200)
+      #expect(last_response.body).to eq(package_metadata.to_json)
+      #result = get ....
+
+      #result.body.should eq IO.binread(path_to_file)
+
+      
+      #expect(send_file).to have_been_called
     end
   end
 end

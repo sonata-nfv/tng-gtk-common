@@ -36,28 +36,54 @@ require 'net/http'
 
 class FetchPackagesService
   
-  # curl http://localhost:4011/catalogues/api/v2/packages
+  # curl http://localhost:4011/catalogues/api/v2
   CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
+  NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'
     
   def self.metadata(params)
-    return [400, {error: 'The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'}.to_json] if CATALOGUE_URL == ''
-    STDERR.puts "params=#{params}"
+    if CATALOGUE_URL == ''
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
+      return nil 
+    end
     begin
       if params.key?(:package_uuid)
         uri = URI.parse(CATALOGUE_URL+'/packages/'+params[:package_uuid])
-        STDERR.puts "uri=#{uri}"
       else
         uri = URI.parse(CATALOGUE_URL+'/packages')
         uri.query = URI.encode_www_form(sanitize(params))
       end
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
-      #request["content-type"] = 'application/zip'
-      #request["content-disposition"] = 'attachment; filename=<filename.son>'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, e.message]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
+    end
+    nil
+  end
+  
+  def self.package_file(params)
+    if CATALOGUE_URL == ''
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
+      return nil 
+    end
+    begin
+      package_metadata = metadata(params)
+      return nil unless package_metadata
+      package_file_uuid = package_metadata.fetch(:son_package_uuid, '')
+      if package_file_uuid == ''
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, "Package file UUID not set for package '#{params[:package_uuid]}'"]
+        return nil
+      end
+      package_file_name = package_metadata.fetch(:grid_fs_name, '')
+      if package_file_name == ''
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, "Package file name not set for package '#{params[:package_uuid]}'"]
+        return nil
+      end
+      download_and_save_file(package_file_uuid, package_file_name)
+      return package_file_name
+    rescue Exception => e
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
     end
     nil
   end
@@ -67,5 +93,24 @@ class FetchPackagesService
     params[:page_number] ||= ENV.fetch('DEFAULT_PAGE_NUMBER', 0)
     params[:page_size]   ||= ENV.fetch('DEFAULT_PAGE_SIZE', 100)
     params
+  end
+  
+  def self.download_and_save_file(file_uuid, file_name)
+    #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
+    uri = URI.parse(CATALOGUE_URL+'/tgo-packages/'+file_uuid)
+    request = Net::HTTP::Get.new(uri)
+    request['content-type'] = 'application/zip'
+    request['content-disposition'] = 'attachment; filename='+file_name
+    Net::HTTP.start(uri.hostname, uri.port) do |http| 
+      request = Net::HTTP::Get.new uri
+
+      http.request request do |response|
+        open '/tmp/'+file_name, 'w' do |io|
+          response.read_body do |chunk|
+            io.write chunk
+          end
+        end
+      end
+    end
   end
 end

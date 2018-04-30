@@ -101,8 +101,11 @@ class PackageController < ApplicationController
     halt 200, {}, result.to_json
   end
   
-  get '/:package_uuid/file/?' do 
-    halt 501, {}, ['.../api/v3/packages/:package_uuid/file is not implemented yet']
+  get '/:package_uuid/package-file/?' do 
+    captures=params.delete('captures') if params.key? 'captures'
+    file_name = FetchPackagesService.package_file(params)
+    halt 404, {}, {error: "No package file with UUID '#{params[:package_uuid]}' was found"}.to_json if file_name.to_s.empty? # covers nil
+    send_file '/tmp/'+file_name, type: 'application/zip', filename: file_name
   end
 
   private
