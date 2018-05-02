@@ -11,29 +11,21 @@
       }
     },
     "host": "tng-gtk-common:5000",
-    "basePath": "",
+    "basePath": "/",
     "tags": [
         {
-            "name": "gatekeeper-common-root-access",
+            "name": "root access",
             "description": "Gatekeeper Common API root access"
         },
         {
-            "name": "gatekeeper-common-package-on-boarding",
+            "name": "package management",
             "description": "Gatekeeper Common API package on-boarding"
-        },
-        {
-            "name": "gatekeeper-common-package-queries",
-            "description": "Gatekeeper Common API package queries"
-        },
-        {
-            "name": "gatekeeper-common-package-downloading",
-            "description": "Gatekeeper Common API package downloading"
         }
     ],
     "paths": {
       "/": {
         "get": {
-          "tags": ["gatekeeper-common-root-access"],
+          "tags": ["root access"],
           "summary": "Returns something usefull on access to root",
           "operationId": "returnRootAccess",
           "consumes": ["*/*"],
@@ -46,7 +38,7 @@
       },
       "/packages": {
         "post": {
-            "tags": ["packages-on-boarding"],
+            "tags": ["package management"],
             "summary": "Uploads a package",
             "operationId": "postPackage",
             "consumes": ["multipart/form-data"],
@@ -94,25 +86,27 @@
             }
         },
         "get": {
-          "tags": ["packages-querying"],
+          "tags": ["package management"],
           "summary": "Query packages",
           "operationId": "packageQuerying",
           "consumes": ["*/*"],
           "produces": ["application/json"],
           "parameters": [
             {
-              "in": "query",
               "name": "page_size",
+              "in": "query",
               "description": "The number of records to be included in a page",
               "required": false,
-              "schema": { "type": "integer"}
+              "type": "integer",
+              "format": "int32"
             },
             {
-              "in": "query",
               "name": "page_number",
+              "in": "query",
               "description": "The number of the page of records to be shown (starting in 0)",
               "required": false,
-              "schema": { "type": "integre"}
+              "type": "integer",
+              "format": "int32"
             }
           ],
           "responses": {
@@ -123,16 +117,16 @@
       },
       "/packages/{package_uuid}": {
         "get": {
+          "tags": ["package management"],
+          "summary": "Query a specific package meta-data",
           "parameters": [
             {
-                "in": "url",
-                "name": "packageUUID",
-                "description": "UUID of the package which meta-data is required",
-                "required": true,
-                "schema": {
-                  "type": "string",
-                  "format": "uuid"
-                }
+              "name": "package_uuid",
+              "in": "path",
+              "description": "UUID of the package which meta-data is required",
+              "required": true,
+              "type": "string",
+              "format": "uuid"
             }
           ],
           "consumes": ["*/*"],
@@ -146,16 +140,16 @@
       },
       "/packages/{package_uuid}/package-file": {
         "get": {
+          "tags": ["package management"],
+          "summary": "Fetch a specific package file",
           "parameters": [
             {
-                "in": "url",
-                "name": "packageUUID",
-                "description": "UUID of the package which file is required",
-                "required": true,
-                "schema": {
-                  "type": "string",
-                  "format": "uuid"
-                }
+              "name": "package_uuid",
+              "in": "path",
+              "required": true,
+              "description": "UUID of the package which file is required",
+              "type": "string",
+              "format": "uuid"
             }
           ],
           "consumes": ["*/*"],
@@ -169,20 +163,19 @@
       },
       "/status/{process_uuid}": {
         "get": {
-          "tags": ["gatekeeper-common-package-on-boarding-status"],
+          "tags": ["package management"],
           "summary": "Returns the status of a given package on-boarding process",
           "operationId": "returnPackageOnboardingStatus",
           "consumes": ["*/*"],
           "produces": ["application/json"],
           "parameters": [
             {
-                "in": "url",
-                "name": "onPackageChangeEvent",
-                "description": "onPackageChangeEvent",
-                "required": true,
-                "schema": {
-                    "$ref": "#/definitions/OnPackageChangeEvent"
-                }
+              "name": "process_uuid",
+              "in": "path",
+              "required": true,
+              "description": "The process UUID returned when the package was initially uploaded",
+              "type": "string",
+              "format": "uuid"
             }
           ],
           "responses": {
