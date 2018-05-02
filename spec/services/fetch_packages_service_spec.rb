@@ -77,7 +77,8 @@ RSpec.describe FetchPackagesService do
     let(:package_file_uuid) {SecureRandom.uuid}
     let(:package_file_name) {'whatever_name.tgo'}
     let(:incomplete_package_metadata) {{package_uuid: package_uuid, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
-    let(:file_data) { File.open('spec/fixtures/5gtango-ns-package-example.tgo', 'rb')}#Rack::Test::UploadedFile.new(__FILE__, 'multipart/form-data')}
+    let(:file_data) { File.open(File.join(File.dirname(__FILE__),'..','fixtures','5gtango-ns-package-example.tgo'), 'rb')}
+
     it 'rejects calls with non-existing packages' do
       allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).and_return(nil)
       expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
