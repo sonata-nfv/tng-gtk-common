@@ -1,0 +1,217 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "description": "5GTANGO, an H2020 5GPPP project",
+      "version": "0.0.1",
+      "title": "5GTANGO Common (V&V/SP) Gatekeeper component REST API",
+      "termsOfService": "https://5gtango.eu/",
+      "license": {
+          "name": "Apache License 2.0",
+          "url": "https://github.com/sonata-nfv/tng-gtk-common/blob/master/LICENSE"
+      }
+    },
+    "host": "tng-gtk-common:5000",
+    "basePath": "",
+    "tags": [
+        {
+            "name": "gatekeeper-common-root-access",
+            "description": "Gatekeeper Common API root access"
+        },
+        {
+            "name": "gatekeeper-common-package-on-boarding",
+            "description": "Gatekeeper Common API package on-boarding"
+        },
+        {
+            "name": "gatekeeper-common-package-queries",
+            "description": "Gatekeeper Common API package queries"
+        },
+        {
+            "name": "gatekeeper-common-package-downloading",
+            "description": "Gatekeeper Common API package downloading"
+        }
+    ],
+    "paths": {
+      "/": {
+        "get": {
+          "tags": ["gatekeeper-common-root-access"],
+          "summary": "Returns something usefull on access to root",
+          "operationId": "returnRootAccess",
+          "consumes": ["*/*"],
+          "produces": ["text/html; charset=utf-8"],
+          "parameters": [],
+          "responses": {
+            "200": { "description": "OK"}
+          }
+        }
+      },
+      "/packages": {
+        "post": {
+            "tags": ["packages-on-boarding"],
+            "summary": "Uploads a package",
+            "operationId": "postPackage",
+            "consumes": ["multipart/form-data"],
+            "produces": ["application/json"],
+            "requestBody":{
+              "description":"Package data, both the file and meta-data",
+              "required": true,
+              "content":{
+                "multipart/form-data":{
+                  "schema":{
+                    "properties":{
+                      "package": {
+                        "description": "Uploaded package file",
+                        "type":"string",
+                        "format":"binary"
+                      },
+                      "callback_url":{
+                        "description": "URL called after unpackaging (optional)",
+                        "type":"string"
+                      },
+                      "layer":{
+                        "description": "Layer tag to be unpackaged (optional)",
+                        "type":"string"
+                      },
+                      "format":{
+                        "description": "Package format (optional)", 
+                        "default": "eu.5gtango",
+                        "type":"string"
+                      },
+                      "skip_store":{
+                        "description": "Skip catalog upload of contents (optional)",
+                        "type":"boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "parameters": [
+              { "name": "X-Fields", "in": "header", "type": "string", "format": "mask", "description": "An optional fields mask" }
+            ],
+            "responses": {
+                "200": { "description": "OK, the package upload request has been accepted" },
+                "400": { "description": "Bad Request" }
+            }
+        },
+        "get": {
+          "tags": ["packages-querying"],
+          "summary": "Query packages",
+          "operationId": "packageQuerying",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "query",
+              "name": "page_size",
+              "description": "The number of records to be included in a page",
+              "required": false,
+              "schema": { "type": "integer"}
+            },
+            {
+              "in": "query",
+              "name": "page_number",
+              "description": "The number of the page of records to be shown (starting in 0)",
+              "required": false,
+              "schema": { "type": "integre"}
+            }
+          ],
+          "responses": {
+              "200": { "description": "OK"},
+              "400": {"description": "Bad Request"}
+          }
+        }
+      },
+      "/packages/{package_uuid}": {
+        "get": {
+          "parameters": [
+            {
+                "in": "url",
+                "name": "packageUUID",
+                "description": "UUID of the package which meta-data is required",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+            }
+          ],
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "responses": {
+            "200": { "description": "OK"},
+            "400": { "description": "Bad request"},
+            "404": { "description": "Not found"}
+          }
+        }
+      },
+      "/packages/{package_uuid}/package-file": {
+        "get": {
+          "parameters": [
+            {
+                "in": "url",
+                "name": "packageUUID",
+                "description": "UUID of the package which file is required",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+            }
+          ],
+          "consumes": ["*/*"],
+          "produces": ["application/zip"],
+          "responses": {
+            "200": { "description": "OK"},
+            "400": { "description": "Bad request"},
+            "404": { "description": "Not found"}
+          }
+        }
+      },
+      "/status/{process_uuid}": {
+        "get": {
+          "tags": ["gatekeeper-common-package-on-boarding-status"],
+          "summary": "Returns the status of a given package on-boarding process",
+          "operationId": "returnPackageOnboardingStatus",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+                "in": "url",
+                "name": "onPackageChangeEvent",
+                "description": "onPackageChangeEvent",
+                "required": true,
+                "schema": {
+                    "$ref": "#/definitions/OnPackageChangeEvent"
+                }
+            }
+          ],
+          "responses": {
+            "200": { "description": "OK"},
+            "400": { "description": "Bad request"},
+            "404": { "description": "Not found"}
+          }
+        }
+      }
+    },
+    "definitions": {
+        "OnPackageChangeEvent": {
+            "type": "object",
+            "required": [
+                "event_name",
+                "package_id"
+            ],
+            "properties": {
+                "event_name": {
+                    "type": "string",
+                    "allowEmptyValue": false
+                },
+                "package_id": {
+                    "type": "string",
+                    "allowEmptyValue": false
+                },
+                "package_location": {"type": "string"}
+            },
+            "title": "OnPackageChangeEvent"
+        }
+    }
+}

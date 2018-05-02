@@ -35,7 +35,7 @@ require 'securerandom'
 
 class PackageController < ApplicationController
 
-  INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', '')
+  INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', 'http://tng-gtk-common:5000/on-change')
   OK_PACKAGE_ACCEPTED="{'package_process_uuid':'%s', 'package_process_status':'%s'}"
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
