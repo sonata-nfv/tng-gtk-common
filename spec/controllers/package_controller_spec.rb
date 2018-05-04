@@ -128,6 +128,7 @@ RSpec.describe PackageController, type: :controller do
       expect(last_response.body).to eq(package_metadata.to_json)
     end
   end
+=begin
   describe 'Accepts single package download query' do
     let(:package_uuid) {SecureRandom.uuid}
     let(:package_file_uuid) {SecureRandom.uuid}
@@ -140,4 +141,5 @@ RSpec.describe PackageController, type: :controller do
       expect(last_response.status).to eq(200)
     end
   end
+=end
 end
