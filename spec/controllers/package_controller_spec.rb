@@ -137,13 +137,6 @@ RSpec.describe PackageController, type: :controller do
       allow(FetchPackagesService).to receive(:package_file).with({'package_uuid'=> package_uuid}).and_return(package_file_name)
       get '/'+package_uuid+'/package-file'
       expect(last_response.status).to eq(200)
-      #expect(last_response.body).to eq(package_metadata.to_json)
-      #result = get ....
-
-      #result.body.should eq IO.binread(path_to_file)
-
-      
-      #expect(send_file).to have_been_called
     end
   end
 end
