@@ -132,9 +132,10 @@ RSpec.describe PackageController, type: :controller do
     let(:package_uuid) {SecureRandom.uuid}
     let(:package_file_uuid) {SecureRandom.uuid}
     let(:package_file_name) {'whatever_name.tgo'}
-    let(:package_metadata) { {package_uuid: uuid, son_package_uuid: package_file_uuid, grid_fs_name: package_file_name, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+    let(:package_metadata) { {package_uuid: package_uuid, son_package_uuid: package_file_uuid, grid_fs_name: package_file_name, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
     it 'returning Ok (200) and the package file when package is found' do
       allow(FetchPackagesService).to receive(:package_file).with({package_uuid: package_uuid}).and_return(package_file_name)
+      allow(FetchPackagesService).to receive(:metadata).with({package_uuid: package_uuid}).and_return(package_metadata)
       get '/'+package_uuid+'/package-file'
       expect(last_response.status).to eq(200)
     end

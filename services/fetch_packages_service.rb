@@ -88,10 +88,13 @@ class FetchPackagesService
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
       return nil 
     end
+    STDERR.puts "FetchPackagesService#package_file: params=#{params}"
     begin
       package_metadata = metadata(params)
+      STDERR.puts "FetchPackagesService#package_file: package_metadata=#{package_metadata}"
       return nil unless package_metadata
       package_file_uuid = package_metadata.fetch(:son_package_uuid, '')
+      STDERR.puts "FetchPackagesService#package_file: package_file_uuid=#{package_file_uuid}"
       if package_file_uuid == ''
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, "Package file UUID not set for package '#{params[:package_uuid]}'"]
         return nil
