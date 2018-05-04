@@ -81,27 +81,6 @@ class UploadPackageService
     notify_user(params)
   end
   
-  def self.fetch_status(process_id)
-    begin
-      curl = Curl::Easy.http_get( UNPACKAGER_URL+'/status/'+process_id) do |request|
-        request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
-      end
-      result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
-      case curl.response_code.to_i
-      when 200
-        result
-      else
-        nil
-      end
-    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
-      STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to package processing status from #{UNPACKAGER_URL}"]
-      nil
-    end
-  end
-  
-  # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
-  # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
-  
   private
   def self.save_result(result)
     process_id = result[:package_process_uuid]
