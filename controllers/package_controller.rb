@@ -36,7 +36,8 @@ require 'securerandom'
 class PackageController < ApplicationController
 
   INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', 'http://tng-gtk-common:5000/on-change')
-  OK_PACKAGE_ACCEPTED="{'package_process_uuid':'%s', 'package_process_status':'%s'}"
+  #OK_PACKAGE_ACCEPTED="{'package_process_uuid':'%s', 'package_process_status':'%s'}"
+  ERROR_PACKAGE_FILE_PARAMETER_MISSING={error: 'Package file name parameter is missing'}
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
 
@@ -46,16 +47,17 @@ class PackageController < ApplicationController
   post '/?' do
     # RESET = 'reset' unless const_defined?(:RESET)
 
-    halt 400, {}, ERROR_PACKAGE_CONTENT_TYPE.to_json unless request.content_type =~ /^multipart\/form-data/
+    halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_CONTENT_TYPE.to_json unless request.content_type =~ /^multipart\/form-data/
     
     begin
       ValidatePackageParametersService.call request.params
     rescue ArgumentError => e
-      halt 400, {}, 'Package file parameter is missing'
+      halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_FILE_PARAMETER_MISSING.to_json
     end
     code, body = UploadPackageService.call( request.params, request.content_type, INTERNAL_CALLBACK_URL)
-    halt 200, {}, OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]] if code == 200
-    halt code, {}, ERROR_PACKAGE_ACCEPTATION.to_json
+    halt 200, {'content-type'=>'application/json'}, body.to_json if code == 200
+    #OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]] if code == 200
+    halt code, {'content-type'=>'application/json'}, ERROR_PACKAGE_ACCEPTATION.to_json
   end
   
   # Callback for the tng-sdk-packager to notify the result of processing
