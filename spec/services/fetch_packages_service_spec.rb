@@ -40,6 +40,26 @@ RSpec.describe FetchPackagesService do
     expect(described_class.const_defined?(:CATALOGUE_URL)).to be_truthy   
   end
   
+  describe 'Accepts status queries' do
+    let(:unpackager_url)  {FetchPackagesService::UNPACKAGER_URL}
+    let(:possible_status) { ["waiting", "running", "failed", "success"]}
+    let(:valid_processing_uuid) {SecureRandom.uuid}
+    let(:status_message) { {package_process_uuid: valid_processing_uuid, status: "waiting", error_msg: "Whatever"}}
+    it 'breaks unless UNPACKAGER_URL ENV message is defined' do
+      expect(described_class.const_defined?(:UNPACKAGER_URL)).to be_truthy   
+    end
+    it "returning nil when it doesn't find the package" do
+      stub_request(:get, unpackager_url+'/status/'+valid_processing_uuid).
+        to_return(status: 404, body: '', headers: {'content-type' => 'application/json'})
+      expect(described_class.status(valid_processing_uuid)).to be_nil
+    end
+    it "returning valid data" do
+      stub_request(:get, unpackager_url+'/status/'+valid_processing_uuid).
+        to_return(status: 200, body: status_message.to_json, headers: {'content-type' => 'application/json'})
+      expect(described_class.status(valid_processing_uuid)).to eq(status_message)
+    end
+  end
+  
   describe '.metadata' do    
     let(:uuid_1) {SecureRandom.uuid}
     let(:uuid_2) {SecureRandom.uuid}

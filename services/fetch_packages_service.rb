@@ -39,7 +39,28 @@ class FetchPackagesService
   # curl http://localhost:4011/catalogues/api/v2
   CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
   NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'
-    
+  UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
+  NO_UNPACKAGER_URL_DEFINED_ERROR='The UNPACKAGER_URL ENV variable needs to defined and pointing to the Packager component URL'
+  
+  def self.status(process_id)
+    # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
+    # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
+    if UNPACKAGER_URL == ''
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
+      return nil 
+    end
+    begin
+      uri = URI.parse(UNPACKAGER_URL+'/status/'+process_id)
+      request = Net::HTTP::Get.new(uri)
+      request['content-type'] = 'application/json'
+      response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
+      return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
+    rescue Exception => e
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
+    end
+    nil
+  end
+
   def self.metadata(params)
     if CATALOGUE_URL == ''
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
@@ -67,10 +88,13 @@ class FetchPackagesService
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
       return nil 
     end
+    STDERR.puts "FetchPackagesService#package_file: params=#{params}"
     begin
       package_metadata = metadata(params)
+      STDERR.puts "FetchPackagesService#package_file: package_metadata=#{package_metadata}"
       return nil unless package_metadata
       package_file_uuid = package_metadata.fetch(:son_package_uuid, '')
+      STDERR.puts "FetchPackagesService#package_file: package_file_uuid=#{package_file_uuid}"
       if package_file_uuid == ''
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, "Package file UUID not set for package '#{params[:package_uuid]}'"]
         return nil

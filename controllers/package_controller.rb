@@ -80,7 +80,7 @@ class PackageController < ApplicationController
     #ERROR_PROCESS_UUID_NOT_VALID="Process UUID %s not valid"
     #ERROR_NO_STATUS_FOUND="No status found for %s processing id"
     halt 400, {}, {error: "Process UUID #{params[:process_uuid]} not valid"}.to_json unless uuid_valid?(params[:process_uuid])
-    result = UploadPackageService.fetch_status(params[:process_uuid])
+    result = FetchPackagesService.status(params[:process_uuid])
     halt 404, {}, {error: "No status found for '#{params[:process_uuid]}' processing id"}.to_json if result.to_s.empty? 
     halt 200, {}, result.to_json
   end
