@@ -83,7 +83,7 @@ class UploadPackageService
   
   def self.fetch_status(process_id)
     begin
-      curl = Curl::Easy.http_get( UNPACKAGER_URL+'/'+process_id) do |request|
+      curl = Curl::Easy.http_get( UNPACKAGER_URL+'/status/'+process_id) do |request|
         request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
       end
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
