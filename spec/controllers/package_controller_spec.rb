@@ -83,12 +83,12 @@ RSpec.describe PackageController, type: :controller do
       expect(last_response.status).to eq(400)
     end
     it "rejecting (404) an unknow processing UUID" do
-      allow(UploadPackageService).to receive(:fetch_status).with(unknown_processing_uuid).and_return(nil)
+      allow(FetchPackagesService).to receive(:status).with(unknown_processing_uuid).and_return(nil)
       get '/status/'+unknown_processing_uuid
       expect(last_response.status).to eq(404)
     end
     it "accepting (200) valid requests and returning expected data" do
-      allow(UploadPackageService).to receive(:fetch_status).with(valid_processing_uuid).and_return(status_message)
+      allow(FetchPackagesService).to receive(:status).with(valid_processing_uuid).and_return(status_message)
       get '/status/'+valid_processing_uuid
       expect(last_response.status).to eq(200)
       expect(last_response.body).to eq(status_message.to_json)
