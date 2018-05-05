@@ -67,9 +67,9 @@ class UploadPackageService
       result = JSON.parse(body, quirks_mode: true, symbolize_names: true)
       result
     rescue Exception => e
-        STDERR.puts e.message  
-        STDERR.puts e.backtrace.inspect
-        return [ 500, "Internal Server Error"]
+      STDERR.puts e.message  
+      STDERR.puts e.backtrace.inspect
+      return [ 500, "Internal Server Error"]
     end
     save_user_callback( result[:package_process_uuid], params['callback_url'])
     [curl.response_code.to_i, result]

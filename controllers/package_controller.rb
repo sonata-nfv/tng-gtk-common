@@ -36,17 +36,21 @@ require 'securerandom'
 class PackageController < ApplicationController
 
   INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', 'http://tng-gtk-common:5000/on-change')
-  #OK_PACKAGE_ACCEPTED="{'package_process_uuid':'%s', 'package_process_status':'%s'}"
+  ERROR_PACKAGE_NOT_FOUND="No package file with UUID '%s' was found"
   ERROR_PACKAGE_FILE_PARAMETER_MISSING={error: 'Package file name parameter is missing'}
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
+  ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
+  ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
+  OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
+  ERROR_PROCESS_UUID_NOT_VALID="Process UUID %s not valid"
+  ERROR_NO_STATUS_FOUND="No status found for %s processing id"
 
   settings.logger.info(self.name) {"Started at #{settings.began_at}"}
+  before { content_type :json}
   
   # Accept packages and pass them to the unpackager/validator component
   post '/?' do
-    # RESET = 'reset' unless const_defined?(:RESET)
-
     halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_CONTENT_TYPE.to_json unless request.content_type =~ /^multipart\/form-data/
     
     begin
@@ -56,32 +60,25 @@ class PackageController < ApplicationController
     end
     code, body = UploadPackageService.call( request.params, request.content_type, INTERNAL_CALLBACK_URL)
     halt 200, {'content-type'=>'application/json'}, body.to_json if code == 200
-    #OK_PACKAGE_ACCEPTED % [body[:package_process_uuid], body[:package_process_status]] if code == 200
     halt code, {'content-type'=>'application/json'}, ERROR_PACKAGE_ACCEPTATION.to_json
   end
   
   # Callback for the tng-sdk-packager to notify the result of processing
   post '/on-change/?' do
-    ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
-    ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
-    OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
-
     halt 400, {}, ERROR_EVENT_CONTENT_TYPE.to_json unless request.content_type =~ /application\/json/
     begin
       ValidateEventParametersService.call(request.body.read)
     rescue ArgumentError => e
-      halt 400, {}, e.message
+      halt 400, {}, [e.message]
     end
     UploadPackageService.process_callback(event_data)
     halt 200, {}, OK_CALLBACK_PROCESSED % event_data
   end
   
   get '/status/:process_uuid/?' do
-    #ERROR_PROCESS_UUID_NOT_VALID="Process UUID %s not valid"
-    #ERROR_NO_STATUS_FOUND="No status found for %s processing id"
-    halt 400, {}, {error: "Process UUID #{params[:process_uuid]} not valid"}.to_json unless uuid_valid?(params[:process_uuid])
+    halt 400, {}, {error: ERROR_PROCESS_UUID_NOT_VALID % params[:process_uuid]}.to_json unless uuid_valid?(params[:process_uuid])
     result = FetchPackagesService.status(params[:process_uuid])
-    halt 404, {}, {error: "No status found for '#{params[:process_uuid]}' processing id"}.to_json if result.to_s.empty? 
+    halt 404, {}, {error: ERROR_NO_STATUS_FOUND % params[:process_uuid]}.to_json if result.to_s.empty? 
     halt 200, {}, result.to_json
   end
 
@@ -102,7 +99,7 @@ class PackageController < ApplicationController
   get '/:package_uuid/package-file/?' do 
     captures=params.delete('captures') if params.key? 'captures'
     file_name = FetchPackagesService.package_file(params)
-    halt 404, {}, {error: "No package file with UUID '#{params[:package_uuid]}' was found"}.to_json if file_name.to_s.empty? # covers nil
+    halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json if file_name.to_s.empty? # covers nil
     send_file '/tmp/'+file_name, type: 'application/zip', filename: file_name
   end
 
