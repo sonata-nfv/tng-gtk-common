@@ -69,7 +69,7 @@ class PackageController < ApplicationController
     begin
       ValidateEventParametersService.call(request.body.read)
     rescue ArgumentError => e
-      halt 400, {}, [e.message]
+      halt 400, {}, {error: e.message}.to_json
     end
     UploadPackageService.process_callback(event_data)
     halt 200, {}, OK_CALLBACK_PROCESSED % event_data
