@@ -77,15 +77,19 @@ class UploadPackageService
   end
   
   def self.process_callback(params)
-    save_result(params)
+    STDERR.puts "UploadPackageService#process_callback: params=#{params}"
+    result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
     notify_user(params)
+    result
   end
   
   private
   def self.save_result(result)
     process_id = result[:package_process_uuid]
     @@internal_callbacks[process_id][:result]= result
+    STDERR.puts "UploadPackageService#save_result: result=#{@@internal_callbacks[process_id][:result]}"
+    @@internal_callbacks[process_id]
   end
   
   def self.notify_external_systems(params)
@@ -93,6 +97,7 @@ class UploadPackageService
       curl = Curl::Easy.http_post( EXTERNAL_CALLBACK_URL, params.to_json) do |request|
         request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
       end
+      STDERR.puts "UploadPackageService#notify_external_systems: params=#{params}"
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
       STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to external callback #{EXTERNAL_CALLBACK_URL}"]
     end
@@ -100,6 +105,7 @@ class UploadPackageService
   
   def self.notify_user(params)
     user_callback = @@internal_callbacks[params[:package_process_uuid]][:user_callback]
+    STDERR.puts "UploadPackageService#notify_user: user_callback=#{user_callback}"
     return if user_callback.to_s.empty?
     begin
       resp = Curl::Easy.http_post( user_callback, params.to_json) do |http|

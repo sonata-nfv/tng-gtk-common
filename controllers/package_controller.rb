@@ -39,9 +39,8 @@ class PackageController < ApplicationController
   ERROR_PACKAGE_FILE_PARAMETER_MISSING={error: 'Package file name parameter is missing'}
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
-  ERROR_EVENT_CONTENT_TYPE={error: 'Just accepting callbacks in json'}
+  ERROR_EVENT_CONTENT_TYPE='Just accepting callbacks in json, received %s'
   ERROR_EVENT_PARAMETER_MISSING={error: 'Event received with no data'}
-  OK_CALLBACK_PROCESSED = "Callback for process id %s processed"
   ERROR_PROCESS_UUID_NOT_VALID="Process UUID %s not valid"
   ERROR_NO_STATUS_FOUND="No status found for %s processing id"
 
@@ -64,11 +63,12 @@ class PackageController < ApplicationController
   
   # Callback for the tng-sdk-packager to notify the result of processing
   post '/on-change/?' do
-    halt 400, {}, ERROR_EVENT_CONTENT_TYPE.to_json unless request.content_type =~ /application\/json/
+    STDERR.puts "PackageController POST on-change: request.content_type=#{request.content_type}"
+    #halt 400, {}, {error: ERROR_EVENT_CONTENT_TYPE % request.content_type}.to_json unless request.content_type =~ /application\/json/
     begin
       event_data = ValidateEventParametersService.call(request.body.read)
-      UploadPackageService.process_callback(event_data)
-      halt 200, {}, OK_CALLBACK_PROCESSED % event_data
+      result = UploadPackageService.process_callback(event_data)
+      halt 200, {}, result.to_json
     rescue ArgumentError => e
       halt 400, {}, {error: e.message}.to_json
     end
