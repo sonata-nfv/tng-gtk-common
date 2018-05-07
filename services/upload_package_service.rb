@@ -77,6 +77,7 @@ class UploadPackageService
   end
   
   def self.process_callback(params)
+    # example: https://gist.github.com/mpeuster/4a302c2667dfa1ed428b3c993534841d
     STDERR.puts "UploadPackageService#process_callback: params=#{params}"
     result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
@@ -84,12 +85,20 @@ class UploadPackageService
     result
   end
   
+  def self.status(process_id)
+    # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
+    # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
+    STDERR.puts "UploadPackageService#status: @@internal_callbacks[process_id.to_sym][:result]=#{@@internal_callbacks[process_id.to_sym][:result]}"
+    return @@internal_callbacks[process_id.to_sym][:result] unless @@internal_callbacks[process_id.to_sym][:result] == nil
+    FetchPackagesService.status(process_id)
+  end
+  
   private
   def self.save_result(result)
     process_id = result[:package_process_uuid]
-    @@internal_callbacks[process_id][:result]= result
-    STDERR.puts "UploadPackageService#save_result: result=#{@@internal_callbacks[process_id][:result]}"
-    @@internal_callbacks[process_id]
+    @@internal_callbacks[process_id.to_sym][:result]= result
+    STDERR.puts "UploadPackageService#save_result: result=#{@@internal_callbacks[process_id.to_sym][:result]}"
+    @@internal_callbacks[process_id.to_sym]
   end
   
   def self.notify_external_systems(params)
@@ -104,7 +113,7 @@ class UploadPackageService
   end
   
   def self.notify_user(params)
-    user_callback = @@internal_callbacks[params[:package_process_uuid]][:user_callback]
+    user_callback = @@internal_callbacks[params[:package_process_uuid].to_sym][:user_callback]
     STDERR.puts "UploadPackageService#notify_user: user_callback=#{user_callback}"
     return if user_callback.to_s.empty?
     begin

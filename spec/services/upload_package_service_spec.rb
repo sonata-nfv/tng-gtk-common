@@ -73,7 +73,7 @@ RSpec.describe UploadPackageService do
       allow(described_class).to receive(:notify_user)
     }
     it 'calls the external callback' do
-      UploadPackageService.class_variable_set :@@internal_callbacks, {abc: { user_callback: user_callback_url, result: event_data}}
+      described_class.class_variable_set :@@internal_callbacks, {abc: { user_callback: user_callback_url, result: event_data}}
       expect{described_class.process_callback(event_data)}.not_to raise_error
     end
     it 'calls the user callback (if exists)' do
