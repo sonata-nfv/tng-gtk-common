@@ -141,7 +141,7 @@ RSpec.describe PackageController, type: :controller do
     let(:uuid) {SecureRandom.uuid}
     let(:package_metadata) { {package_uuid: uuid, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
     it 'returning Ok (200) and the package meta-data when package is found' do
-      allow(FetchPackagesService).to receive(:metadata).with({'package_uuid'=> uuid}).and_return(package_metadata)
+      allow(FetchPackagesService).to receive(:metadata).with({package_uuid: uuid}).and_return(package_metadata)
       get '/'+uuid
       expect(last_response).to be_ok
       expect(last_response.body).to eq(package_metadata.to_json)
