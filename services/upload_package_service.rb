@@ -43,14 +43,15 @@ class UploadPackageService
     attr_accessor :internal_callbacks
   end
   
+  INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', 'http://tng-gtk-common:5000/packages/on-change')
   EXTERNAL_CALLBACK_URL = ENV.fetch('EXTERNAL_CALLBACK_URL', '')
   UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
-  ERROR_UNPACKAGER_URL_NOT_PROVIDED={error: 'You must provide the un-packager URL as the UNPACKAGER_URL environment variable'}
-  
+  ERROR_UNPACKAGER_URL_NOT_PROVIDED='You must provide the un-packager URL as the UNPACKAGER_URL environment variable'
+  ERROR_EXCEPTION_RAISED={error: 'Exception raised while posting package or parsing answer'}
   @@internal_callbacks = {}
   
   def self.call(params, content_type, internal_callback_url)
-    return [400, ERROR_UNPACKAGER_URL_NOT_PROVIDED.to_json] if UNPACKAGER_URL == ''
+    raise ArgumentError.new ERROR_UNPACKAGER_URL_NOT_PROVIDED if UNPACKAGER_URL == ''
     
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(UNPACKAGER_URL)
@@ -63,16 +64,15 @@ class UploadPackageService
         Curl::PostField.content('format', params.fetch('format', ''))
       )
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
-      body = curl.body_str
-      result = JSON.parse(body, quirks_mode: true, symbolize_names: true)
-      result
+      result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
+      STDERR.puts "UploadPackageService#call: result=#{result}"
     rescue Exception => e
       STDERR.puts e.message  
       STDERR.puts e.backtrace.inspect
-      return [ 500, "Internal Server Error"]
+      raise Error.new(ERROR_EXCEPTION_RAISED) 
     end
     save_user_callback( result[:package_process_uuid], params['callback_url'])
-    [curl.response_code.to_i, result]
+    result
   end
   
   def self.process_callback(params)

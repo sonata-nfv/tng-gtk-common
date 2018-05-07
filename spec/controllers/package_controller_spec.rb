@@ -51,8 +51,8 @@ RSpec.describe PackageController, type: :controller do
         #expect(last_response).to be_created
         expect(last_response.status).to eq(200)
       end
-      it 'returning 400 when something was not ok' do
-        allow(UploadPackageService).to receive(:call).and_return([400, result])
+      it 'raising exception when something was not ok' do
+        allow(UploadPackageService).to receive(:call).and_raise(ArgumentError)
         post '/', package: file_data
         expect(last_response.status).to eq(400)
       end
