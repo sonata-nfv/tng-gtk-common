@@ -68,23 +68,21 @@ RSpec.describe UploadPackageService do
         with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
         to_return(status: 200, body: "", headers: {})
       allow(ENV).to receive(:[]).with("UNPACKAGER_URL").and_return(unpackager_url)
-      allow(UploadPackageService).to receive(:save_result)
-      allow(UploadPackageService).to receive(:notify_external_systems)
-      allow(UploadPackageService).to receive(:notify_user)
+      allow(described_class).to receive(:save_result)
+      allow(described_class).to receive(:notify_external_systems)
+      allow(described_class).to receive(:notify_user)
     }
     it 'calls the external callback' do
       UploadPackageService.class_variable_set :@@internal_callbacks, {abc: { user_callback: user_callback_url, result: event_data}}
-      expect{UploadPackageService.process_callback(event_data)}.not_to raise_error
+      expect{described_class.process_callback(event_data)}.not_to raise_error
     end
     it 'calls the user callback (if exists)' do
-      UploadPackageService.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
-      expect{UploadPackageService.process_callback(event_data)}.not_to raise_error
+      described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
+      expect{described_class.process_callback(event_data)}.not_to raise_error
     end
     it 'does not call the user callback when it does not exist' do
-      UploadPackageService.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
-      expect{UploadPackageService.process_callback(event_data)}.not_to raise_error
+      described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
+      expect{described_class.process_callback(event_data)}.not_to raise_error
     end
-    #resp = OpenStruct.new(header_str: "HTTP/1.1 200 OK\nRecord-Count: 1", body: token.to_json)            
-    #allow(Curl).to receive(:post).with(login_url, '{}').and_return(resp)
   end
 end

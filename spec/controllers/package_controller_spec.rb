@@ -46,10 +46,9 @@ RSpec.describe PackageController, type: :controller do
     context 'when they are multipart and' do
       it 'returning 200 when everything was ok' do
         allow(ValidatePackageParametersService).to receive(:call).and_return(true)
-        allow(UploadPackageService).to receive(:call).and_return([200, result])
+        allow(UploadPackageService).to receive(:call).and_return(result)
         post '/', package: file_data
-        #expect(last_response).to be_created
-        expect(last_response.status).to eq(200)
+        expect(last_response).to be_ok
       end
       it 'raising exception when something was not ok' do
         allow(UploadPackageService).to receive(:call).and_raise(ArgumentError)
@@ -71,6 +70,26 @@ RSpec.describe PackageController, type: :controller do
     end
   end
   describe 'Accepts callbacks' do
+    let(:package_process_uuid) {SecureRandom.uuid}
+    let(:optional_valid_event_data) {{
+      package_id: "string", 
+      package_location: "string",
+      package_metadata: "string"
+    }}
+    let(:valid_event_data) {optional_valid_event_data.merge!({
+      event_name: "onPackageChangeEvent", 
+      package_process_status: "string",
+      package_process_uuid: package_process_uuid
+    })}
+    let(:valid_result) { {package_process_uuid: package_process_uuid, result: valid_event_data}}
+    it 'returning 200 when everything was ok' do
+      allow(ValidateEventParametersService).to receive(:call).with(valid_event_data.to_json).and_return(valid_event_data)
+      allow(UploadPackageService).to receive(:process_callback).with(valid_event_data).and_return(valid_result)
+      post '/on-change', valid_event_data.to_json, {"Content-Type"=>"application/json"}
+      expect(last_response).to be_ok
+      expect(last_response.body).to eq(valid_result.to_json)
+      #{"package_process_uuid":"0afa8290-13cd-4fa0-8af2-cc9865a0c6e0","result":{"package_id":"string","package_location":"string","package_metadata\":\"string","event_name":"onPackageChangeEvent\","package_process_status":"string","package_process_uuid\":"0afa8290-13cd-4fa0-8af2-cc9865a0c6e0"}}"]
+    end
   end
   describe 'Accepts status queries' do
     let(:possible_status) { ["waiting", "running", "failed", "success"]}
@@ -90,7 +109,7 @@ RSpec.describe PackageController, type: :controller do
     it "accepting (200) valid requests and returning expected data" do
       allow(FetchPackagesService).to receive(:status).with(valid_processing_uuid).and_return(status_message)
       get '/status/'+valid_processing_uuid
-      expect(last_response.status).to eq(200)
+      expect(last_response).to be_ok
       expect(last_response.body).to eq(status_message.to_json)
     end
   end
@@ -101,7 +120,7 @@ RSpec.describe PackageController, type: :controller do
     it 'adding default parameters for page size and number' do
       allow(FetchPackagesService).to receive(:metadata).with({}).and_return([package_1_metadata, package_2_metadata])
       get '/'
-      expect(last_response.status).to eq(200)
+      expect(last_response).to be_ok
       expect(last_response.body).to eq([package_1_metadata, package_2_metadata].to_json)
     end
     
@@ -114,7 +133,7 @@ RSpec.describe PackageController, type: :controller do
     it 'returning Ok (200) and an empty array when no package is found' do
       allow(FetchPackagesService).to receive(:metadata).with({}).and_return([])
       get '/'
-      expect(last_response.status).to eq(200)
+      expect(last_response).to be_ok
       expect(last_response.body).to eq([].to_json)
     end
   end
@@ -124,7 +143,7 @@ RSpec.describe PackageController, type: :controller do
     it 'returning Ok (200) and the package meta-data when package is found' do
       allow(FetchPackagesService).to receive(:metadata).with({'package_uuid'=> uuid}).and_return(package_metadata)
       get '/'+uuid
-      expect(last_response.status).to eq(200)
+      expect(last_response).to be_ok
       expect(last_response.body).to eq(package_metadata.to_json)
     end
   end
@@ -138,7 +157,7 @@ RSpec.describe PackageController, type: :controller do
       allow(FetchPackagesService).to receive(:package_file).with({package_uuid: package_uuid}).and_return(package_file_name)
       allow(FetchPackagesService).to receive(:metadata).with({package_uuid: package_uuid}).and_return(package_metadata)
       get '/'+package_uuid+'/package-file'
-      expect(last_response.status).to eq(200)
+      expect(last_response).to be_ok
     end
   end
 =end
