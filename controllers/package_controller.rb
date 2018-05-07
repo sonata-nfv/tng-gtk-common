@@ -76,7 +76,7 @@ class PackageController < ApplicationController
   
   get '/status/:process_uuid/?' do
     halt 400, {}, {error: ERROR_PROCESS_UUID_NOT_VALID % params[:process_uuid]}.to_json unless uuid_valid?(params[:process_uuid])
-    result = FetchPackagesService.status(params[:process_uuid])
+    result = UploadPackageService.status(params[:process_uuid])
     halt 404, {}, {error: ERROR_NO_STATUS_FOUND % params[:process_uuid]}.to_json if result.to_s.empty? 
     halt 200, {}, result.to_json
   end

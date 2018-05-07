@@ -97,17 +97,17 @@ RSpec.describe PackageController, type: :controller do
     let(:status_message) { {package_process_uuid: valid_processing_uuid, status: "waiting", error_msg: "Whatever"}}
     let(:invalid_processing_uuid) {'abc123'}
     let(:unknown_processing_uuid) {SecureRandom.uuid}
-    it "rejecting (400) those with an invalid UUDI" do
+    it "rejecting (400) those with an invalid UUID" do
       get '/status/'+invalid_processing_uuid
       expect(last_response.status).to eq(400)
     end
     it "rejecting (404) an unknow processing UUID" do
-      allow(FetchPackagesService).to receive(:status).with(unknown_processing_uuid).and_return(nil)
+      allow(UploadPackageService).to receive(:status).with(unknown_processing_uuid).and_return(nil)
       get '/status/'+unknown_processing_uuid
       expect(last_response.status).to eq(404)
     end
     it "accepting (200) valid requests and returning expected data" do
-      allow(FetchPackagesService).to receive(:status).with(valid_processing_uuid).and_return(status_message)
+      allow(UploadPackageService).to receive(:status).with(valid_processing_uuid).and_return(status_message)
       get '/status/'+valid_processing_uuid
       expect(last_response).to be_ok
       expect(last_response.body).to eq(status_message.to_json)
