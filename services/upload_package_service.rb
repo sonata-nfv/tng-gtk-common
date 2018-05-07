@@ -47,10 +47,10 @@ class UploadPackageService
   EXTERNAL_CALLBACK_URL = ENV.fetch('EXTERNAL_CALLBACK_URL', '')
   UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
   ERROR_UNPACKAGER_URL_NOT_PROVIDED='You must provide the un-packager URL as the UNPACKAGER_URL environment variable'
-  ERROR_EXCEPTION_RAISED={error: 'Exception raised while posting package or parsing answer'}
+  ERROR_EXCEPTION_RAISED='Exception raised while posting package or parsing answer'
   @@internal_callbacks = {}
   
-  def self.call(params, content_type, internal_callback_url)
+  def self.call(params, content_type)
     raise ArgumentError.new ERROR_UNPACKAGER_URL_NOT_PROVIDED if UNPACKAGER_URL == ''
     
     tempfile = save_file params['package'][:tempfile]
@@ -59,13 +59,14 @@ class UploadPackageService
     begin
       curl.http_post(
         Curl::PostField.file('package', tempfile.path),
-        Curl::PostField.content('callback_url', internal_callback_url),
+        Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', ''))
       )
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
       STDERR.puts "UploadPackageService#call: result=#{result}"
+      STDOUT.puts "UploadPackageService#call: result=#{result}"
     rescue Exception => e
       STDERR.puts e.message  
       STDERR.puts e.backtrace.inspect
