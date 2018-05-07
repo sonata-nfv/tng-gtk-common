@@ -83,21 +83,21 @@ class PackageController < ApplicationController
 
   get '/?' do 
     captures=params.delete('captures') if params.key? 'captures'
-    result = FetchPackagesService.metadata(params)
+    result = FetchPackagesService.metadata(symbolized_hash(params))
     halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.to_s.empty? # covers nil
     halt 200, {}, result.to_json
   end
   
-  get '/:package_uuid?' do 
+  get '/:package_uuid/?' do 
     captures=params.delete('captures') if params.key? 'captures'
-    result = FetchPackagesService.metadata(params)
-    halt 404, {}, {error: "No package with UUID '#{params}' was found"}.to_json if result.to_s.empty? # covers nil
+    result = FetchPackagesService.metadata(symbolized_hash(params))
+    halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json if result.to_s.empty? # covers nil
     halt 200, {}, result.to_json
   end
   
   get '/:package_uuid/package-file/?' do 
     captures=params.delete('captures') if params.key? 'captures'
-    file_name = FetchPackagesService.package_file(params)
+    file_name = FetchPackagesService.package_file(symbolized_hash(params))
     halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json if file_name.to_s.empty? # covers nil
     send_file '/tmp/'+file_name, type: 'application/zip', filename: file_name
   end
@@ -106,5 +106,9 @@ class PackageController < ApplicationController
   def uuid_valid?(uuid)
     return true if (uuid =~ /[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}/) == 0
     false
+  end
+  
+  def symbolized_hash(hash)
+    Hash[hash.map{|(k,v)| [k.to_sym,v]}]
   end
 end

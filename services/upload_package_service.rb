@@ -96,9 +96,9 @@ class UploadPackageService
   private
   def self.save_result(result)
     process_id = result[:package_process_uuid]
-    @@internal_callbacks[process_id.to_sym][:result]= result
-    STDERR.puts "UploadPackageService#save_result: result=#{@@internal_callbacks[process_id.to_sym][:result]}"
-    @@internal_callbacks[process_id.to_sym]
+    @@internal_callbacks[process_id][:result]= result
+    STDERR.puts "UploadPackageService#save_result: result=#{@@internal_callbacks[process_id][:result]}"
+    @@internal_callbacks[process_id]
   end
   
   def self.notify_external_systems(params)
