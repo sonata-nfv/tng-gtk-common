@@ -66,12 +66,12 @@ class PackageController < ApplicationController
   post '/on-change/?' do
     halt 400, {}, ERROR_EVENT_CONTENT_TYPE.to_json unless request.content_type =~ /application\/json/
     begin
-      ValidateEventParametersService.call(request.body.read)
+      event_data = ValidateEventParametersService.call(request.body.read)
+      UploadPackageService.process_callback(event_data)
+      halt 200, {}, OK_CALLBACK_PROCESSED % event_data
     rescue ArgumentError => e
       halt 400, {}, {error: e.message}.to_json
     end
-    UploadPackageService.process_callback(event_data)
-    halt 200, {}, OK_CALLBACK_PROCESSED % event_data
   end
   
   get '/status/:process_uuid/?' do
