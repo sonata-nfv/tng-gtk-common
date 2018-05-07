@@ -35,7 +35,6 @@ require 'securerandom'
 
 class PackageController < ApplicationController
 
-  INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', 'http://tng-gtk-common:5000/on-change')
   ERROR_PACKAGE_NOT_FOUND="No package file with UUID '%s' was found"
   ERROR_PACKAGE_FILE_PARAMETER_MISSING={error: 'Package file name parameter is missing'}
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
@@ -55,11 +54,11 @@ class PackageController < ApplicationController
     
     begin
       ValidatePackageParametersService.call request.params
+      body = UploadPackageService.call( request.params, request.content_type)
+      halt 200, {'content-type'=>'application/json'}, body.to_json
     rescue ArgumentError => e
-      halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_FILE_PARAMETER_MISSING.to_json
+      halt 400, {'content-type'=>'application/json'}, {error: e.message}.to_json
     end
-    code, body = UploadPackageService.call( request.params, request.content_type, INTERNAL_CALLBACK_URL)
-    halt 200, {'content-type'=>'application/json'}, body.to_json if code == 200
     halt code, {'content-type'=>'application/json'}, ERROR_PACKAGE_ACCEPTATION.to_json
   end
   

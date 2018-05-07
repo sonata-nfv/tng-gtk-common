@@ -60,7 +60,7 @@ RSpec.describe UploadPackageService do
       stub_request(:post, unpackager_url).
         #with(body: "package=%2Ftmp%2FUIYUYTZT20180306-49778-fcognf&callback_url=http%3A%2F%2Fexample.com%2Finternal&layer=xyz&format=").
         to_return(status: 200, body: result.to_json, headers: {})
-      expect(UploadPackageService.call(params, content_type, internal_callback_url)).to eq([200, result])
+      expect(UploadPackageService.call(params, content_type, internal_callback_url)).to eq(result)
     end
   end
   describe '.process_callback' do
