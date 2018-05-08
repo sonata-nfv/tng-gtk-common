@@ -88,17 +88,25 @@ class UploadPackageService
   def self.status(process_id)
     # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
     # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
-    STDERR.puts "UploadPackageService#status: @@internal_callbacks[process_id.to_sym][:result]=#{@@internal_callbacks[process_id.to_sym][:result]}"
-    return @@internal_callbacks[process_id.to_sym][:result] unless @@internal_callbacks[process_id.to_sym][:result] == nil
+    STDERR.puts "UploadPackageService#status: [#{process_id}][:result]=#{db_get(process_id)[:result]}"
+    return db_get(process_id)[:result] unless db_get(process_id)[:result].to_s.empty?
     FetchPackagesService.status(process_id)
   end
   
   private
+  def self.db_get(key)
+    @@internal_callbacks[key.is_a?(Symbol) ? key : key.to_sym]
+  end
+  def self.db_set(key, value)
+    @@internal_callbacks[key.is_a?(Symbol) ? key : key.to_sym] = value
+  end
+  
   def self.save_result(result)
-    process_id = result[:package_process_uuid]
-    @@internal_callbacks[process_id][:result]= result
-    STDERR.puts "UploadPackageService#save_result: result=#{@@internal_callbacks[process_id][:result]}"
-    @@internal_callbacks[process_id]
+    process = db_get result[:package_process_uuid]
+    return {} if process == nil
+    process[:result]= result
+    STDERR.puts "UploadPackageService#save_result: result=#{process[:result]}"
+    process
   end
   
   def self.notify_external_systems(params)
@@ -113,7 +121,9 @@ class UploadPackageService
   end
   
   def self.notify_user(params)
-    user_callback = @@internal_callbacks[params[:package_process_uuid].to_sym][:user_callback]
+    process = db_get(params[:package_process_uuid])
+    return if process == nil
+    user_callback = process[:user_callback]
     STDERR.puts "UploadPackageService#notify_user: user_callback=#{user_callback}"
     return if user_callback.to_s.empty?
     begin
@@ -134,7 +144,7 @@ class UploadPackageService
   end
   
   def self.save_user_callback(uuid, user_callback)
-    @@internal_callbacks[uuid.to_sym] = { user_callback: user_callback, result: nil}
+    db_set(uuid, { user_callback: user_callback, result: nil})
   end
   
   def self.random_string

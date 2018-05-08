@@ -80,6 +80,11 @@ RSpec.describe FetchPackagesService do
       stub_request(:get, catalogue_url+'/packages?page_number='+default_page_number+'&page_size=1').to_return(status: 200, body: [package_1_metadata].to_json, headers: {'content-type' => 'application/json'})
       expect(described_class.metadata({page_size: 1})).to eq([package_1_metadata])
     end
+    it 'calls the Catalogue with default page_number and page_size, returning existing packages' do      
+      stub_request(:get, catalogue_url+'/packages?page_number='+default_page_number+'&page_size='+default_page_size).
+        to_return(status: 200, body: packages_metadata.to_json, headers: {'content-type' => 'application/json'})
+      expect(described_class.metadata({page_size: default_page_size, page_number: default_page_number})).to eq(packages_metadata)
+    end
     context 'calls the Catalogue with the passed UUID' do
       it 'return Ok (200) for existing UUIDs' do      
         stub_request(:get, catalogue_url+'/packages/'+uuid_1).to_return(status: 200, body: package_1_metadata.to_json, headers: {'content-type' => 'application/json'})
