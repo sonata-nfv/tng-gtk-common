@@ -68,14 +68,18 @@ class FetchPackagesService
     end
     begin
       if params.key?(:package_uuid)
-        uri = URI.parse(CATALOGUE_URL+'/packages/'+params[:package_uuid])
+        package_uuid = params.delete :package_uuid
+        uri = URI.parse(CATALOGUE_URL+'/packages/'+package_uuid)
+        # mind that there ccany be more params, so we might need to pass params as well
       else
         uri = URI.parse(CATALOGUE_URL+'/packages')
         uri.query = URI.encode_www_form(sanitize(params))
       end
+      STDERR.puts "FetchPackagesService#metadata: querying uri=#{uri}"
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
+      STDERR.puts "FetchPackagesService#metadata: querying response=#{response}"
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]

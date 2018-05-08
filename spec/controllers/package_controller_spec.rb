@@ -116,6 +116,7 @@ RSpec.describe PackageController, type: :controller do
   describe 'Accepts packages queries' do
     let(:package_1_metadata) {{vendor: '5gtango', name: 'whatever', version: '0.0.1'}}
     let(:package_2_metadata) {{vendor: '5gtango', name: 'whatever', version: '0.0.2'}}
+    let(:packages_metadata) {[package_1_metadata, package_2_metadata]}
     
     it 'adding default parameters for page size and number' do
       allow(FetchPackagesService).to receive(:metadata).with({}).and_return([package_1_metadata, package_2_metadata])

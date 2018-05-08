@@ -68,7 +68,8 @@ class PackageController < ApplicationController
     begin
       event_data = ValidateEventParametersService.call(request.body.read)
       result = UploadPackageService.process_callback(event_data)
-      halt 200, {}, result.to_json
+      halt 200, {}, result.to_json unless result == {}
+      halt 404, {}, {error: "Package processing UUID not found in event #{event_data}"}.to_json
     rescue ArgumentError => e
       halt 400, {}, {error: e.message}.to_json
     end
