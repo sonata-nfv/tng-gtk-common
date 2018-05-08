@@ -88,8 +88,10 @@ class UploadPackageService
   def self.status(process_id)
     # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
     # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
-    STDERR.puts "UploadPackageService#status: [#{process_id}][:result]=#{db_get(process_id)[:result]}"
-    return db_get(process_id)[:result] unless db_get(process_id)[:result].to_s.empty?
+    process = db_get(process_id)
+    return {} if process == nil
+    STDERR.puts "UploadPackageService#status result for #{process_id}=#{process[:result]}"
+    return process[:result] unless process[:result].to_s.empty?
     FetchPackagesService.status(process_id)
   end
   
