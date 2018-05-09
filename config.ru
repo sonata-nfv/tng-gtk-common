@@ -31,6 +31,9 @@
 ## partner consortium (www.5gtango.eu).
 # encoding: utf-8
 require 'sinatra/base'
-Dir.glob('./{services,controllers}/*.rb').each { |file| require file }
-map('/packages') { run PackageController } 
+require './controllers/application_controller.rb'
+require './controllers/package_controller.rb'
+require './controllers/root_controller.rb'
+Dir.glob('./services/*.rb').each { |file| require file }
+map('/packages') { run PackageController }
 map('/') { run RootController }
