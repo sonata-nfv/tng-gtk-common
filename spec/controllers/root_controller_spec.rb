@@ -37,7 +37,7 @@ RSpec.describe RootController, type: :controller do
   include Rack::Test::Methods
   def app() RootController end
 
-  describe 'Accepts access to roo (/)' do
+  describe 'Accepts access to root (/)' do
     it 'returning 200' do
       get '/'
       expect(last_response.status).to eq(200)
