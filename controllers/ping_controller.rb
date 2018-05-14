@@ -1,3 +1,5 @@
+## SONATA - Gatekeeper
+##
 ## Copyright (c) 2015 SONATA-NFV [, ANY ADDITIONAL AFFILIATION]
 ## ALL RIGHTS RESERVED.
 ## 
@@ -23,34 +25,18 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to 
 ## acknowledge the contributions of their colleagues of the SONATA 
 ## partner consortium (www.sonata-nfv.eu).
-# spec/spec_helper.rb
-require 'rack/test'
-require 'rspec'
-require 'webmock/rspec'
+# frozen_string_literal: true
+# encoding: utf-8
+require 'sinatra'
+require 'json'
+require 'logger'
 
-ENV['RACK_ENV'] = 'test'
+class PingController < ApplicationController
 
-require File.dirname(__FILE__) + '/../controllers/application_controller'
-require File.dirname(__FILE__) + '/../controllers/package_controller'
-require File.dirname(__FILE__) + '/../controllers/root_controller'
-require File.dirname(__FILE__) + '/../controllers/ping_controller'
-require File.dirname(__FILE__) + '/../services/validate_package_parameters_service'
-require File.dirname(__FILE__) + '/../services/validate_event_parameters_service'
-require File.dirname(__FILE__) + '/../services/upload_package_service'
-require File.dirname(__FILE__) + '/../services/fetch_packages_service'
-
-RSpec.configure do |config|
-  config.include Rack::Test::Methods
-  config.mock_with :rspec do |configuration|
-    #configuration.syntax = [:expect, :should]
-    #configuration.syntax = :should
-    configuration.syntax = :expect
+  settings.logger.info(self.name) {"Started at #{settings.began_at}"}
+  before { content_type :json}
+  
+  get '/?' do
+    halt 200, {}, { alive_since: settings.began_at}.to_json
   end
-  config.order = 'random'
-  #config.color_enabled = true
-  config.tty = true
-  config.formatter = :documentation
-  config.profile_examples = 3
 end
-
-WebMock.disable_net_connect!() #allow_localhost: true)

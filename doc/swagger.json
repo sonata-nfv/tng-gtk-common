@@ -36,6 +36,19 @@
           }
         }
       },
+      "/pings": {
+        "get": {
+          "tags": ["pings"],
+          "summary": "Returns time since started",
+          "operationId": "returnPong",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [],
+          "responses": {
+            "200": { "description": "OK"}
+          }
+        }
+      },
       "/packages": {
         "post": {
             "summary": "Uploads a package",

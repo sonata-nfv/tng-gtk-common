@@ -33,11 +33,11 @@
 # encoding: utf-8
 require_relative '../spec_helper'
 
-RSpec.describe RootController, type: :controller do
+RSpec.describe PingController, type: :controller do
   include Rack::Test::Methods
   def app() RootController end
 
-  describe 'Accepts access to root (/)' do
+  describe 'Accepts access to /ping' do
     it 'returning 200' do
       get '/'
       expect(last_response.status).to eq(200)

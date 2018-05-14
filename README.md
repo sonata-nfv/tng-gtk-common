@@ -96,6 +96,26 @@ This component's API is documented in a [Swagger 2.0 file](https://github.com/so
 
 The current version supports an `api_root` like `http://pre-int-ath.5gtango.eu:32003`.
 
+### Root
+The root (`/`) API of this component can be accessed to return the API it implements (still a WiP).
+
+```shell
+$ curl {api_root}/api/v3/
+```
+
+### Pings
+In order for the component to communicate it is alive, the following command can be issued:
+
+```shell
+$ curl {api_root}/api/v3/pings
+```
+
+An `HTTP` return code of `200` will indicate that the component is alive. In the current implementation, the answer will be a `Content-Type` of `application/json`, like in:
+
+```json
+{ "alive_since": "2018-05-14 10:53:41 UTC"}
+```
+
 ### Packages
 Packages constitute the unit for uploading information into the [Catalogue](http://github.com/sonata-nfv/tng-cat).
 
