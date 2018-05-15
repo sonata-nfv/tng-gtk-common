@@ -33,7 +33,7 @@
 # encoding: utf-8
 require_relative '../spec_helper'
 
-RSpec.describe PingController, type: :controller do
+RSpec.describe PingsController, type: :controller do
   include Rack::Test::Methods
   def app() RootController end
 

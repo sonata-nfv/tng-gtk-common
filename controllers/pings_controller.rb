@@ -31,7 +31,7 @@ require 'sinatra'
 require 'json'
 require 'logger'
 
-class PingController < ApplicationController
+class PingsController < ApplicationController
 
   settings.logger.info(self.name) {"Started at #{settings.began_at}"}
   before { content_type :json}
