@@ -168,6 +168,8 @@ If different default values for the starting page number and the number of recor
 $ curl ":api_root/ackages?page_size=20&page_number=2"
 ```
 
+Note the `""` used around the command, in order for the `shell` used to consider the `&` as part of the command, instead of considering it a background process command.
+
 Expected returned data is:
 
 * `HTTP` code `200` (`Ok`) with an array of package's metadata in the body (`JSON` format), or an empty array (`[]`) if none is found according to the parameters passed;
