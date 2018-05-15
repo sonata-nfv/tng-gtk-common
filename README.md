@@ -94,20 +94,20 @@ Explain your code style and show how to check it.
 
 This component's API is documented in a [Swagger 2.0 file](https://github.com/sonata-nfv/tng-gtk-common/blob/master/doc/swagger.json). The current version does not support any form of authentication, since it is supposed to work with the [API Gateway](https://github.com/sonata-nfv/tng-api-gtw/) component in fron of it.
 
-The current version supports an `api_root` like `http://pre-int-ath.5gtango.eu:32003`.
+The current version supports an `api_root` like `http://pre-int-ath.5gtango.eu:32003`. We are using the [`sinatra`](http://sinatrarb.com/) way of representing `URL` parameters, i.e., `:api_root`, `:package_uuid`, etc.
 
 ### Root
 The root (`/`) API of this component can be accessed to return the API it implements (still a WiP).
 
 ```shell
-$ curl {api_root}/api/v3/
+$ curl :api_root/
 ```
 
 ### Pings
 In order for the component to communicate it is alive, the following command can be issued:
 
 ```shell
-$ curl {api_root}/api/v3/pings
+$ curl :api_root/pings
 ```
 
 An `HTTP` return code of `200` will indicate that the component is alive. In the current implementation, the answer will be a `Content-Type` of `application/json`, like in:
@@ -132,42 +132,83 @@ On-boarding (i.e., uploading) a package is an **asynchronous** process that invo
 On-boarding a package can be done by the following command:
 
 ```shell
-$ curl -X POST {api_root}/api/v3/packages -F "package=@./5gtango-ns-package-example.tgo"
+$ curl -X POST :api_root/packages -F "package=@./5gtango-ns-package-example.tgo"
 ```
 
  The `package` field is the only one that is mandatory, but there are a number of optional ones that you can check [here](https://github.com/sonata-nfv/tng-sdk-package).
+ 
+ Expected returned data is:
+
+ * `HTTP` code `200` (`Ok`) if the package is accepted for processing, with a `JSON` object including the `package_processing_uuid` (see Querying the status, below);
+ * `HTTP` code `400` (`Bad Request`), if the file is not found, has the wrong `MEDIA` type, etc. 
   
 #### Querying
 
 We may query the on-boarding process by issuing
 
 ```shell
-$ curl {api_root}/api/v3/packages/status/:processing_uuid
+$ curl :api_root/packages/status/:package_processing_uuid
 ```
+
+Expected returned data is:
+
+* `HTTP` code `200` (`Ok`) if the package processing `UUID` is found, with the processing status in the body (`JSON` format);
+* `HTTP` code `400` (`Bad Request`), if the `:package_processing_uuid` is mal-formed;
+* `HTTP` code `404` (`Not Found`), if the package processing is not found.
 
 Querying all existing packages can be done using the following command (default values for `DEFAULT_PAGE_SIZE` and `DEFAULT_PAGE_NUMBER` mentioned above are used):
 
 ```shell
-$ curl {api_root}/api/v3/packages
+$ curl :api_root/packages
 ```
 
 If different default values for the starting page number and the number of records per page are needed, these can be used as query parameters:
 
 ```shell
-$ curl "{api_root}/api/v3/packages?page_size=20&page_number=2"
+$ curl ":api_root/ackages?page_size=20&page_number=2"
 ```
+
+Expected returned data is:
+
+* `HTTP` code `200` (`Ok`) with an array of package's metadata in the body (`JSON` format), or an empty array (`[]`) if none is found according to the parameters passed;
 
 A specific package's metadata can be fetched using the following command:
 
 ```shell
-$ curl "{api_root}/api/v3/packages/:package_uuid"
+$ curl :api_root/packages/:package_uuid
 ```
+
+Expected returned data is:
+
+* `HTTP` code `200` (`Ok`) if the package is found, with the package's metadata in the body (`JSON` format);
+* `HTTP` code `400` (`Bad Request`), if the `:package_uuid` is mal-formed;
+* `HTTP` code `404` (`Not Found`), if the package is not found.
 
 In case we want to download the package's file, we can use the following command:
 
 ```shell
-$ curl "{api_root}/api/v3/packages/:package_uuid/package-file"
+$ curl :api_root/packages/:package_uuid/package-file
 ```
+
+Expected returned data is:
+
+* `HTTP` code `200` (`Ok`) if the package is found, with the package's file in the body (binary format);
+* `HTTP` code `400` (`Bad Request`), if the `:package_uuid` is mal-formed;
+* `HTTP` code `404` (`Not Found`), if the package is not found.
+
+#### Deleting
+
+We may delete an on-boarded package by issuing the following command:
+
+```shell
+$ curl -X DELETE :api_root/packages/:package_uuid
+```
+
+Expected returned data is:
+
+* `HTTP` code `204` (`No Content`) if the package is found and successfuly deleted (the body will be empty);
+* `HTTP` code `400` (`Bad Request`), if the `:package_uuid` is mal-formed;
+* `HTTP` code `404` (`Not Found`), if the package is not found.
 
 ## Database
 

@@ -103,6 +103,13 @@ class PackageController < ApplicationController
     send_file '/tmp/'+file_name, type: 'application/zip', filename: file_name
   end
 
+  delete '/:package_uuid/?' do 
+    #captures=params.delete('captures') if params.key? 'captures'
+    result = DeletePackagesService.call(params[:package_uuid])
+    halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json if result.to_s.empty? # covers nil
+    halt 204, {}, {}
+  end
+  
   private
   def uuid_valid?(uuid)
     return true if (uuid =~ /[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}/) == 0

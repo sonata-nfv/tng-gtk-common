@@ -162,4 +162,19 @@ RSpec.describe PackageController, type: :controller do
     end
   end
 =end
+  describe 'Deletes a single package' do
+    let(:uuid) {SecureRandom.uuid}
+    let(:package_metadata) { {package_uuid: uuid, pd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
+    it 'returning Ok (200) when the package is found' do
+      allow(DeletePackagesService).to receive(:call).with(uuid).and_return(0)
+      delete '/'+uuid
+      expect(last_response).to be_no_content
+    end
+    it 'returning Not Found (404) when the package is not found' do
+      allow(DeletePackagesService).to receive(:call).and_return(nil)
+      delete '/'+uuid
+      expect(last_response).to be_not_found
+    end
+  end
+  
 end

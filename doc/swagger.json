@@ -197,6 +197,27 @@
             "400": { "description": "Bad request"},
             "404": { "description": "Not found"}
           }
+        },
+        "delete": {
+          "tags": ["package management"],
+          "summary": "Delete a specific package (meta-data and files)",
+          "parameters": [
+            {
+              "name": "package_uuid",
+              "in": "path",
+              "description": "UUID of the package to be deleted",
+              "required": true,
+              "type": "string",
+              "format": "uuid"
+            }
+          ],
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "responses": {
+            "204": { "description": "No Content"},
+            "400": { "description": "Bad request"},
+            "404": { "description": "Not found"}
+          }
         }
       },
       "/packages/{package_uuid}/package-file": {
