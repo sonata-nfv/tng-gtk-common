@@ -33,7 +33,7 @@ require 'logger'
 require 'securerandom'
 #require_relative '../services/upload_package_service'
 
-class PackageController < ApplicationController
+class PackagesController < ApplicationController
 
   ERROR_PACKAGE_NOT_FOUND="No package file with UUID '%s' was found"
   ERROR_PACKAGE_FILE_PARAMETER_MISSING={error: 'Package file name parameter is missing'}
@@ -63,7 +63,7 @@ class PackageController < ApplicationController
   
   # Callback for the tng-sdk-packager to notify the result of processing
   post '/on-change/?' do
-    STDERR.puts "PackageController POST on-change: request.content_type=#{request.content_type}"
+    STDERR.puts "PackagesController POST on-change: request.content_type=#{request.content_type}"
     #halt 400, {}, {error: ERROR_EVENT_CONTENT_TYPE % request.content_type}.to_json unless request.content_type =~ /application\/json/
     begin
       event_data = ValidateEventParametersService.call(request.body.read)
@@ -108,6 +108,13 @@ class PackageController < ApplicationController
     result = DeletePackagesService.call(params[:package_uuid])
     halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json if result.to_s.empty? # covers nil
     halt 204, {}, {}
+  end
+  
+  options '/?' do
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,DELETE'      
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+    halt 200
   end
   
   private

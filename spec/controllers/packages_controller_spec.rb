@@ -33,9 +33,9 @@
 # encoding: utf-8
 require_relative '../spec_helper'
 
-RSpec.describe PackageController, type: :controller do
+RSpec.describe PackagesController, type: :controller do
   include Rack::Test::Methods
-  def app() PackageController end
+  def app() PackagesController end
 
   describe 'Accepts (POST) uploaded packages' do
     # http://seejohncode.com/2012/04/29/quick-tip-testing-multipart-uploads-with-rspec/

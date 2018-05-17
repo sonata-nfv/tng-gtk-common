@@ -32,10 +32,12 @@
 # encoding: utf-8
 require 'sinatra/base'
 require './controllers/application_controller.rb'
-require './controllers/package_controller.rb'
-require './controllers/ping_controller.rb'
+require './controllers/packages_controller.rb'
+require './controllers/services_controller.rb'
+require './controllers/pings_controller.rb'
 require './controllers/root_controller.rb'
 Dir.glob('./services/*.rb').each { |file| require file }
-map('/packages') { run PackageController }
-map('/pings') { run PingController }
+map('/packages') { run PackagesController }
+map('/services') { run ServicesController }
+map('/pings') { run PingsController }
 map('/') { run RootController }

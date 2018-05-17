@@ -31,13 +31,15 @@ require 'webmock/rspec'
 ENV['RACK_ENV'] = 'test'
 
 require File.dirname(__FILE__) + '/../controllers/application_controller'
-require File.dirname(__FILE__) + '/../controllers/package_controller'
+require File.dirname(__FILE__) + '/../controllers/packages_controller'
+require File.dirname(__FILE__) + '/../controllers/services_controller'
 require File.dirname(__FILE__) + '/../controllers/root_controller'
-require File.dirname(__FILE__) + '/../controllers/ping_controller'
+require File.dirname(__FILE__) + '/../controllers/pings_controller'
 require File.dirname(__FILE__) + '/../services/validate_package_parameters_service'
 require File.dirname(__FILE__) + '/../services/validate_event_parameters_service'
 require File.dirname(__FILE__) + '/../services/upload_package_service'
 require File.dirname(__FILE__) + '/../services/fetch_packages_service'
+require File.dirname(__FILE__) + '/../services/fetch_services_service'
 require File.dirname(__FILE__) + '/../services/delete_packages_service'
 
 RSpec.configure do |config|
