@@ -1,345 +1,434 @@
 {
-    "swagger": "2.0",
-    "info": {
-      "description": "5GTANGO, an H2020 5GPPP project",
-      "version": "0.0.1",
-      "title": "5GTANGO Common (V&V/SP) Gatekeeper component REST API",
-      "termsOfService": "https://5gtango.eu/",
-      "license": {
-          "name": "Apache License 2.0",
-          "url": "https://github.com/sonata-nfv/tng-gtk-common/blob/master/LICENSE"
+  "swagger": "2.0",
+  "info": {
+    "description": "5GTANGO, an H2020 5GPPP project",
+    "version": "0.0.1",
+    "title": "5GTANGO Common (V&V/SP) Gatekeeper component REST API",
+    "termsOfService": "https://5gtango.eu/",
+    "license": {
+        "name": "Apache License 2.0",
+        "url": "https://github.com/sonata-nfv/tng-gtk-common/blob/master/LICENSE"
+    }
+  },
+  "host": "tng-gtk-common:5000",
+  "basePath": "/",
+  "tags": [
+      { "name": "root access", "description": "Gatekeeper Common API root access"},
+      { "name": "package management", "description": "Gatekeeper Common API package on-boarding"}
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["root access"],
+        "summary": "Returns something usefull on access to root",
+        "operationId": "returnRootAccess",
+        "consumes": ["*/*"],
+        "produces": ["text/html; charset=utf-8"],
+        "parameters": [],
+        "responses": {
+          "200": { "description": "OK"}
+        }
       }
     },
-    "host": "tng-gtk-common:5000",
-    "basePath": "/",
-    "tags": [
-        {
-            "name": "root access",
-            "description": "Gatekeeper Common API root access"
-        },
-        {
-            "name": "package management",
-            "description": "Gatekeeper Common API package on-boarding"
+    "/pings": {
+      "get": {
+        "tags": ["pings"],
+        "summary": "Returns time since started",
+        "operationId": "returnPong",
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "parameters": [],
+        "responses": {
+          "200": { "description": "OK"}
         }
-    ],
-    "paths": {
-      "/": {
-        "get": {
-          "tags": ["root access"],
-          "summary": "Returns something usefull on access to root",
-          "operationId": "returnRootAccess",
-          "consumes": ["*/*"],
-          "produces": ["text/html; charset=utf-8"],
-          "parameters": [],
-          "responses": {
-            "200": { "description": "OK"}
-          }
-        }
-      },
-      "/pings": {
-        "get": {
-          "tags": ["pings"],
-          "summary": "Returns time since started",
-          "operationId": "returnPong",
-          "consumes": ["*/*"],
-          "produces": ["application/json"],
-          "parameters": [],
-          "responses": {
-            "200": { "description": "OK"}
-          }
-        }
-      },
-      "/packages": {
-        "post": {
-            "summary": "Uploads a package",
-            "consumes": ["multipart/form-data"],
-            "produces": ["application/json"],
-            "parameters": [
-              {
-                "name": "package",
-                "in": "formData",
-                "required": true,
-                "type": "string",
-                "description": "Uploaded package file",
-                "x-example": ""
-              },
-              {
-                "name": "callback_url",
-                "in": "formData",
-                "required": false,
-                "type": "string",
-                "description": "URL called after unpackaging (optional)",
-                "x-example": ""
-              },
-              {
-                "name": "layer",
-                "in": "formData",
-                "required": false,
-                "type": "string",
-                "description": "layer tag to be unpackaged (optional)",
-                "x-example": ""
-              },
-              {
-                "name": "format",
-                "in": "formData",
-                "required": false,
-                "type": "string",
-                "description": "Package format (optional)",
-                "default": "eu.5gtango",
-                "x-example": ""
-              },
-              {
-                "name": "skip_store",
-                "in": "formData",
-                "required": false,
-                "type": "string",
-                "description": "Skip catalog upload of contents (optional)",
-                "x-example": ""
-              }
-            ],
-            "operationId": "postPackage",
-            "tags": ["package management"],
-            "responses": {
-                "200": { 
-                  "description": "OK, the package upload request has been accepted", 
-                  "schema": {} 
-                },
-                "400": { "description": "Bad Request", "schema": {} }
-            }
-        },
-        "get": {
-          "tags": ["package management"],
-          "summary": "Query packages",
-          "operationId": "packageQuerying",
-          "consumes": ["*/*"],
+      }
+    },
+    "/packages": {
+      "post": {
+          "summary": "Uploads a package",
+          "consumes": ["multipart/form-data"],
           "produces": ["application/json"],
           "parameters": [
             {
-              "name": "page_size",
-              "in": "query",
-              "description": "The number of records to be included in a page",
-              "required": false,
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
+              "name": "package",
+              "in": "formData",
+              "required": true,
+              "type": "string",
+              "description": "Uploaded package file",
+              "x-example": ""
             },
             {
-              "name": "page_number",
-              "in": "query",
-              "description": "The number of the page of records to be shown (starting in 0)",
+              "name": "callback_url",
+              "in": "formData",
               "required": false,
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0,
-              "default": 0
+              "type": "string",
+              "description": "URL called after unpackaging (optional)",
+              "x-example": ""
+            },
+            {
+              "name": "layer",
+              "in": "formData",
+              "required": false,
+              "type": "string",
+              "description": "layer tag to be unpackaged (optional)",
+              "x-example": ""
+            },
+            {
+              "name": "format",
+              "in": "formData",
+              "required": false,
+              "type": "string",
+              "description": "Package format (optional)",
+              "default": "eu.5gtango",
+              "x-example": ""
+            },
+            {
+              "name": "skip_store",
+              "in": "formData",
+              "required": false,
+              "type": "string",
+              "description": "Skip catalog upload of contents (optional)",
+              "x-example": ""
             }
           ],
+          "operationId": "postPackage",
+          "tags": ["package management"],
           "responses": {
               "200": { 
-                "description": "OK",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/PackagesGetMetadataReturn"
-                  }
-                },
+                "description": "OK, the package upload request has been accepted", 
+                "schema": {} 
               },
-              "400": {"description": "Bad Request"}
+              "400": { "description": "Bad Request", "schema": {} }
           }
-        }
       },
-      "/packages/on-change": {
-        "post": {
-            "summary": "Uploads a package",
-            "consumes": ["application/json"],
-            "produces": ["application/json"],
-            "parameters": [
-              {
-                "in": "body",
-                "name": "onChangeEvent",
-                "description": "Pet object that needs to be added to the store",
-                "required": true,
-                "schema": { "$ref": "#/definitions/OnPackageChangeEvent"}
-              }
-             ],
-            "operationId": "postOnChangeEvent",
-            "tags": ["package management"],
-            "responses": {
-                "200": { 
-                  "description": "OK, the package upload request has been accepted", 
-                  "schema": {} 
-                },
-                "400": { "description": "Bad Request", "schema": {} }
-            }
-        }
-      },
-      "/packages/{package_uuid}": {
-        "get": {
-          "tags": ["package management"],
-          "summary": "Query a specific package meta-data",
-          "parameters": [
-            {
-              "name": "package_uuid",
-              "in": "path",
-              "description": "UUID of the package which meta-data is required",
-              "required": true,
-              "type": "string",
-              "format": "uuid"
-            }
-          ],
-          "consumes": ["*/*"],
-          "produces": ["application/json"],
-          "responses": {
+      "get": {
+        "tags": ["package management"],
+        "summary": "Query packages",
+        "operationId": "packageQuerying",
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "The number of records to be included in a page",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          {
+            "name": "page_number",
+            "in": "query",
+            "description": "The number of the page of records to be shown (starting in 0)",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "default": 0
+          }
+        ],
+        "responses": {
             "200": { 
               "description": "OK",
-              "schema":{ "$ref":"#/definitions/PackagesGetMetadataReturn"}
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/PackagesGetMetadataReturn"
+                }
+              },
             },
-            "400": { "description": "Bad request"},
-            "404": { "description": "Not found"}
-          }
-        },
-        "delete": {
-          "tags": ["package management"],
-          "summary": "Delete a specific package (meta-data and files)",
-          "parameters": [
-            {
-              "name": "package_uuid",
-              "in": "path",
-              "description": "UUID of the package to be deleted",
-              "required": true,
-              "type": "string",
-              "format": "uuid"
-            }
-          ],
-          "consumes": ["*/*"],
-          "produces": ["application/json"],
-          "responses": {
-            "204": { "description": "No Content"},
-            "400": { "description": "Bad request"},
-            "404": { "description": "Not found"}
-          }
+            "400": {"description": "Bad Request"}
         }
       },
-      "/packages/{package_uuid}/package-file": {
-        "get": {
-          "tags": ["package management"],
-          "summary": "Fetch a specific package file",
-          "parameters": [
-            {
-              "name": "package_uuid",
-              "in": "path",
-              "required": true,
-              "description": "UUID of the package which file is required",
-              "type": "string",
-              "format": "uuid"
-            }
-          ],
-          "consumes": ["*/*"],
-          "produces": ["application/zip"],
-          "responses": {
-            "200": { 
-              "description": "OK",
-              "schema":{
-                    "type":"string",
-                    "format":"binary"
-                  }
-            },
-            "400": { "description": "Bad request"},
-            "404": { "description": "Not found"}
-          }
-        }
-      },
-      "/packages/status/{process_uuid}": {
-        "get": {
-          "tags": ["package management"],
-          "summary": "Returns the status of a given package on-boarding process",
-          "operationId": "returnPackageOnboardingStatus",
-          "consumes": ["*/*"],
-          "produces": ["application/json"],
-          "parameters": [
-            {
-              "name": "process_uuid",
-              "in": "path",
-              "required": true,
-              "description": "The process UUID returned when the package was initially uploaded",
-              "type": "string",
-              "format": "uuid"
-            }
-          ],
-          "responses": {
-            "200": { "description": "OK"},
-            "400": { "description": "Bad request"},
-            "404": { "description": "Not found"}
-          }
+      "options": {
+        "tags": ["package management"],
+        "summary": "Options packages",
+        "operationId": "packageOptions",
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "parameters": [],
+        "responses": {
+          "200": { "description": "OK"},
+          "400": {"description": "Bad Request"}
         }
       }
     },
-    "definitions": {
-      "OnPackageChangeEvent": {
-        "type": "object",
-        "required": [
-          "event_name",
-          "package_id"
-        ],
-        "properties": {
-          "event_name": { "type": "string" },
-          "package_id": { "type": "string" },
-          "package_location": { "type": "string" },
-          "package_metadata": { "type": "string" },
-          "package_process_status": { "type": "string" },
-          "package_process_uuid": { "type": "string", "description": "UUID of started unpackaging process." }
-        },
-        "title": "OnPackageChangeEvent"
-      },
-      "PackagesPostReturn": {
-        "required": [
-          "package_process_uuid"
-        ],
-        "properties": {
-          "package_process_uuid": {
-            "type": "string",
-            "description": "UUID of started unpackaging process."
+    "/packages/on-change": {
+      "post": {
+          "summary": "Uploads a package",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "onChangeEvent",
+              "description": "Pet object that needs to be added to the store",
+              "required": true,
+              "schema": { "$ref": "#/definitions/OnPackageChangeEvent"}
+            }
+           ],
+          "operationId": "postOnChangeEvent",
+          "tags": ["package management"],
+          "responses": {
+              "200": { 
+                "description": "OK, the package upload request has been accepted", 
+                "schema": {} 
+              },
+              "400": { "description": "Bad Request", "schema": {} }
           }
-        },
-        "type": "object"
-      },
-      "PackagesGetStatusReturn": {
-        "required": [
-          "package_process_uuid",
-          "status"
-        ],
-        "properties": {
-          "package_process_uuid": {
+      }
+    },
+    "/packages/{package_uuid}": {
+      "get": {
+        "tags": ["package management"],
+        "summary": "Query a specific package meta-data",
+        "parameters": [
+          {
+            "name": "package_uuid",
+            "in": "path",
+            "description": "UUID of the package which meta-data is required",
+            "required": true,
             "type": "string",
-            "description": "UUID of started unpackaging process."
-          },
-          "status": {
-            "type": "string",
-            "description": "Status of the unpacking process: waiting|runnig|failed|done"
-          },
-          "error_msg": {
-            "type": "string",
-            "description": "More detailed error message."
+            "format": "uuid"
           }
-        },
-        "type": "object"
-      },
-      "PackagesGetMetadataReturn": {
-        "required": [
-          "package_uuid",
-          "pd"
         ],
-        "properties": {
-          "package_uuid": {
-            "type": "string",
-            "description": "UUID of the package."
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "responses": {
+          "200": { 
+            "description": "OK",
+            "schema":{ "$ref":"#/definitions/PackagesGetMetadataReturn"}
           },
-          "pd": {
+          "400": { "description": "Bad request"},
+          "404": { "description": "Not found"}
+        }
+      },
+      "delete": {
+        "tags": ["package management"],
+        "summary": "Delete a specific package (meta-data and files)",
+        "parameters": [
+          {
+            "name": "package_uuid",
+            "in": "path",
+            "description": "UUID of the package to be deleted",
+            "required": true,
             "type": "string",
-            "description": "Package descriptor"
+            "format": "uuid"
           }
-        },
-        "type": "object"
+        ],
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "responses": {
+          "204": { "description": "No Content"},
+          "400": { "description": "Bad request"},
+          "404": { "description": "Not found"}
+        }
+      }
+    },
+    "/packages/{package_uuid}/package-file": {
+      "get": {
+        "tags": ["package management"],
+        "summary": "Fetch a specific package file",
+        "parameters": [
+          {
+            "name": "package_uuid",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the package which file is required",
+            "type": "string",
+            "format": "uuid"
+          }
+        ],
+        "consumes": ["*/*"],
+        "produces": ["application/zip"],
+        "responses": {
+          "200": { 
+            "description": "OK",
+            "schema":{
+                  "type":"string",
+                  "format":"binary"
+                }
+          },
+          "400": { "description": "Bad request"},
+          "404": { "description": "Not found"}
+        }
+      }
+    },
+    "/packages/status/{process_uuid}": {
+      "get": {
+        "tags": ["package management"],
+        "summary": "Returns the status of a given package on-boarding process",
+        "operationId": "returnPackageOnboardingStatus",
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "process_uuid",
+            "in": "path",
+            "required": true,
+            "description": "The process UUID returned when the package was initially uploaded",
+            "type": "string",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK"},
+          "400": { "description": "Bad request"},
+          "404": { "description": "Not found"}
+        }
+      }
+    },
+    "/services": {
+      "get": {
+        "tags": ["service management"],
+        "summary": "Query services",
+        "operationId": "serviceQuerying",
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "The number of records to be included in a page",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          {
+            "name": "page_number",
+            "in": "query",
+            "description": "The number of the page of records to be shown (starting in 0)",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "default": 0
+          }
+        ],
+        "responses": {
+            "200": { 
+              "description": "OK",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ServicesGetMetadataReturn"
+                }
+              },
+            },
+            "400": {"description": "Bad Request"}
+        }
+      },
+      "options": {
+        "tags": ["service management"],
+        "summary": "Options for services",
+        "operationId": "serviceOptions",
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "parameters": [],
+        "responses": {
+            "200": { "description": "OK"},
+            "400": {"description": "Bad Request"}
+        }
+      }
+    },
+    "/services/{service_uuid}": {
+      "get": {
+        "tags": ["service management"],
+        "summary": "Query a specific service meta-data",
+        "parameters": [
+          {
+            "name": "service_uuid",
+            "in": "path",
+            "description": "UUID of the service which meta-data is required",
+            "required": true,
+            "type": "string",
+            "format": "uuid"
+          }
+        ],
+        "consumes": ["*/*"],
+        "produces": ["application/json"],
+        "responses": {
+          "200": { 
+            "description": "OK",
+            "schema":{ "$ref":"#/definitions/ServicesGetMetadataReturn"}
+          },
+          "400": { "description": "Bad request"},
+          "404": { "description": "Not found"}
+        }
       }
     }
+  },
+  "definitions": {
+    "OnPackageChangeEvent": {
+      "type": "object",
+      "required": [ "event_name", "package_id"],
+      "properties": {
+        "event_name": { "type": "string" },
+        "package_id": { "type": "string" },
+        "package_location": { "type": "string" },
+        "package_metadata": { "type": "string" },
+        "package_process_status": { "type": "string" },
+        "package_process_uuid": { "type": "string", "description": "UUID of started unpackaging process." }
+      },
+      "title": "OnPackageChangeEvent"
+    },
+    "PackagesPostReturn": {
+      "required": [ "package_process_uuid" ],
+      "properties": {
+        "package_process_uuid": {
+          "type": "string",
+          "description": "UUID of started unpackaging process."
+        }
+      },
+      "type": "object"
+    },
+    "PackagesGetStatusReturn": {
+      "required": [ "package_process_uuid", "status"],
+      "properties": {
+        "package_process_uuid": {
+          "type": "string",
+          "description": "UUID of started unpackaging process."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the unpacking process: waiting|runnig|failed|done"
+        },
+        "error_msg": {
+          "type": "string",
+          "description": "More detailed error message."
+        }
+      },
+      "type": "object"
+    },
+    "PackagesGetMetadataReturn": {
+      "required": [ "package_uuid", "pd" ],
+      "properties": {
+        "package_uuid": {
+          "type": "string",
+          "description": "UUID of the package."
+        },
+        "pd": {
+          "type": "string",
+          "description": "Package descriptor"
+        }
+      },
+      "type": "object"
+    },
+    "ServicesGetMetadataReturn": {
+      "required": [ "service_uuid", "nsd" ],
+      "properties": {
+        "service_uuid": {
+          "type": "string",
+          "description": "UUID of the service."
+        },
+        "nsd": {
+          "type": "string",
+          "description": "Service descriptor"
+        }
+      },
+      "type": "object"
+    }
+  }
 }
