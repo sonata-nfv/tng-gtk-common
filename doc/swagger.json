@@ -146,6 +146,18 @@
               },
               "400": {"description": "Bad Request"}
           }
+        },
+        "options": {
+          "tags": ["package management"],
+          "summary": "Options packages",
+          "operationId": "packageOptions",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [],
+          "responses": {
+            "200": { "description": "OK"},
+            "400": {"description": "Bad Request"}
+          }
         }
       },
       "/packages/on-change": {
