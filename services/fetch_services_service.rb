@@ -38,32 +38,31 @@ class FetchServicesService
   
   # curl http://localhost:4011/catalogues/api/v2
   CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
-  NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'
-  UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
-  NO_UNPACKAGER_URL_DEFINED_ERROR='The UNPACKAGER_URL ENV variable needs to defined and pointing to the Packager component URL'
+  NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch services'
   
   def self.call(params)
+    msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
       return nil 
     end
     begin
-      if params.key?(:package_uuid)
-        package_uuid = params.delete :package_uuid
-        uri = URI.parse(CATALOGUE_URL+'/packages/'+package_uuid)
+      if params.key?(:service_uuid)
+        service_uuid = params.delete :service_uuid
+        uri = URI.parse(CATALOGUE_URL+'/network-services/'+service_uuid)
         # mind that there ccany be more params, so we might need to pass params as well
       else
-        uri = URI.parse(CATALOGUE_URL+'/packages')
+        uri = URI.parse(CATALOGUE_URL+'/network-services')
         uri.query = URI.encode_www_form(sanitize(params))
       end
-      STDERR.puts "FetchPackagesService#metadata: querying uri=#{uri}"
+      STDERR.puts "#{msg}: querying uri=#{uri}"
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      STDERR.puts "FetchPackagesService#metadata: querying response=#{response}"
+      STDERR.puts "#{msg}: querying response=#{response}"
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
     nil
   end

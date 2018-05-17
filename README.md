@@ -165,7 +165,7 @@ $ curl :api_root/packages
 If different default values for the starting page number and the number of records per page are needed, these can be used as query parameters:
 
 ```shell
-$ curl ":api_root/ackages?page_size=20&page_number=2"
+$ curl ":api_root/packages?page_size=20&page_number=2"
 ```
 
 Note the `""` used around the command, in order for the `shell` used to consider the `&` as part of the command, instead of considering it a background process command.
@@ -218,11 +218,42 @@ We may query which operations are allowed with the `HTTP` verb `OPTIONS`, by iss
 
 ```shell
 $ curl -X OPTIONS :api_root/packages
+
+* `HTTP` code `200` (`No Content`) if the package options are defined;
+
+### Services
+Are are on-boarded within packages (see above), so one can not `POST`, `PUT`, `PATCH` or `DELETE` them.
+
+#### Querying
+
+Querying all existing services can be done using the following command (default values for `DEFAULT_PAGE_SIZE` and `DEFAULT_PAGE_NUMBER` mentioned above are used):
+
+```shell
+$ curl :api_root/services
 ```
+
+If different default values for the starting page number and the number of records per page are needed, these can be used as query parameters:
+
+```shell
+$ curl ":api_root/services?page_size=20&page_number=2"
+```
+
+Note the `""` used around the command, in order for the `shell` used to consider the `&` as part of the command, instead of considering it a background process command.
 
 Expected returned data is:
 
-* `HTTP` code `200` (`No Content`) if the package options are defined;
+* `HTTP` code `200` (`Ok`) with an array of services' metadata in the body (`JSON` format), or an empty array (`[]`) if none is found according to the parameters passed;
+
+A specific service's metadata can be fetched using the following command:
+
+```shell
+$ curl :api_root/services/:service_uuid
+
+Expected returned data is:
+
+* `HTTP` code `200` (`Ok`) if the service is found, with the service's metadata in the body (`JSON` format);
+* `HTTP` code `400` (`Bad Request`), if the `:service_uuid` is mal-formed;
+* `HTTP` code `404` (`Not Found`), if the service is not found.
 
 ## Database
 
