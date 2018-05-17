@@ -91,6 +91,80 @@
               "x-example": ""
             }
           ],
+          "responses": {
+              "200": { 
+                "description": "OK",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PackagesGetMetadataReturn"
+                  }
+                },
+              },
+              "400": {"description": "Bad Request"}
+          }
+        },
+        "options": {
+          "tags": ["package management"],
+          "summary": "Options packages",
+          "operationId": "packageOptions",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [],
+          "responses": {
+            "200": { "description": "OK"},
+            "400": {"description": "Bad Request"}
+          }
+        }
+      },
+      "/packages/on-change": {
+        "post": {
+            "summary": "Uploads a package",
+            "consumes": ["application/json"],
+            "produces": ["application/json"],
+            "parameters": [
+              {
+                "in": "body",
+                "name": "onChangeEvent",
+                "description": "Pet object that needs to be added to the store",
+                "required": true,
+                "schema": { "$ref": "#/definitions/OnPackageChangeEvent"}
+              }
+             ],
+            "operationId": "postOnChangeEvent",
+            "tags": ["package management"],
+            "responses": {
+                "200": { 
+                  "description": "OK, the package upload request has been accepted", 
+                  "schema": {} 
+                },
+                "400": { "description": "Bad Request", "schema": {} }
+            }
+        }
+      },
+      "/packages/{package_uuid}": {
+        "get": {
+          "tags": ["package management"],
+          "summary": "Query a specific package meta-data",
+          "parameters": [
+            {
+              "name": "format",
+              "in": "formData",
+              "required": false,
+              "type": "string",
+              "description": "Package format (optional)",
+              "default": "eu.5gtango",
+              "x-example": ""
+            },
+            {
+              "name": "skip_store",
+              "in": "formData",
+              "required": false,
+              "type": "string",
+              "description": "Skip catalog upload of contents (optional)",
+              "x-example": ""
+            }
+          ],
           "operationId": "postPackage",
           "tags": ["package management"],
           "responses": {
