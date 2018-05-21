@@ -248,6 +248,7 @@ A specific service's metadata can be fetched using the following command:
 
 ```shell
 $ curl :api_root/services/:service_uuid
+```
 
 Expected returned data is:
 

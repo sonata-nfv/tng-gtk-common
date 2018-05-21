@@ -69,18 +69,10 @@
               "name": "layer",
               "in": "formData",
               "required": false,
-              "type": "string",
-              "description": "layer tag to be unpackaged (optional)",
-              "x-example": ""
-            },
-            {
-              "name": "format",
-              "in": "formData",
-              "required": false,
-              "type": "string",
-              "description": "Package format (optional)",
-              "default": "eu.5gtango",
-              "x-example": ""
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0,
+              "default": 0
             },
             {
               "name": "skip_store",
@@ -104,6 +96,47 @@
               "400": {"description": "Bad Request"}
           }
         },
+        "get": {
+          "tags": ["package management"],
+          "summary": "Query packages",
+          "operationId": "packageQuerying",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "page_size",
+              "in": "query",
+              "description": "The number of records to be included in a page",
+              "required": false,
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "name": "page_number",
+              "in": "query",
+              "description": "The number of the page of records to be shown (starting in 0)",
+              "required": false,
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0,
+              "default": 0
+            }
+          ],
+          "responses": {
+              "200": { 
+                "description": "OK",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/PackagesGetMetadataReturn"
+                  }
+                },
+              },
+              "400": {"description": "Bad Request"},
+              "404": {"description": "Not found"}
+          }
+        },
         "options": {
           "tags": ["package management"],
           "summary": "Options packages",
@@ -112,8 +145,7 @@
           "produces": ["application/json"],
           "parameters": [],
           "responses": {
-            "200": { "description": "OK"},
-            "400": {"description": "Bad Request"}
+            "200": { "description": "OK"}          
           }
         }
       },
@@ -148,86 +180,34 @@
           "summary": "Query a specific package meta-data",
           "parameters": [
             {
-              "name": "format",
-              "in": "formData",
-              "required": false,
+              "name": "package_uuid",
+              "in": "path",
+              "required": true,
+              "description": "UUID of the package which file is required",
               "type": "string",
-              "description": "Package format (optional)",
-              "default": "eu.5gtango",
-              "x-example": ""
-            },
-            {
-              "name": "skip_store",
-              "in": "formData",
-              "required": false,
-              "type": "string",
-              "description": "Skip catalog upload of contents (optional)",
-              "x-example": ""
+              "format": "uuid"
             }
           ],
-          "operationId": "postPackage",
+          "operationId": "queryPackage",
           "tags": ["package management"],
           "responses": {
-              "200": { 
-                "description": "OK, the package upload request has been accepted", 
-                "schema": {} 
-              },
-              "400": { "description": "Bad Request", "schema": {} }
+              "200": { "description": "OK, the package query request has been accepted"},
+              "400": { "description": "Bad Request" }
           }
-      },
-      "get": {
-        "tags": ["package management"],
-        "summary": "Query packages",
-        "operationId": "packageQuerying",
-        "consumes": ["*/*"],
-        "produces": ["application/json"],
-        "parameters": [
-          {
-            "name": "page_size",
-            "in": "query",
-            "description": "The number of records to be included in a page",
-            "required": false,
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
-          },
-          {
-            "name": "page_number",
-            "in": "query",
-            "description": "The number of the page of records to be shown (starting in 0)",
-            "required": false,
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0,
-            "default": 0
-          }
-        ],
-        "responses": {
-            "200": { 
-              "description": "OK",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/PackagesGetMetadataReturn"
-                }
-              },
-            },
+        },
+        "options": {
+          "tags": ["package management"],
+          "summary": "Options packages",
+          "operationId": "packageOptions",
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "parameters": [],
+          "responses": {
+            "200": { "description": "OK"},
             "400": {"description": "Bad Request"}
+          }
         }
       },
-      "options": {
-        "tags": ["package management"],
-        "summary": "Options packages",
-        "operationId": "packageOptions",
-        "consumes": ["*/*"],
-        "produces": ["application/json"],
-        "parameters": [],
-        "responses": {
-          "200": { "description": "OK"},
-          "400": {"description": "Bad Request"}
-        }
-      }
-    },
     "/packages/on-change": {
       "post": {
           "summary": "Uploads a package",
