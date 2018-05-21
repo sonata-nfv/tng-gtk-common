@@ -145,7 +145,8 @@
           "produces": ["application/json"],
           "parameters": [],
           "responses": {
-            "200": { "description": "OK"}          }
+            "200": { "description": "OK"}          
+          }
         }
       },
       "/packages/on-change": {

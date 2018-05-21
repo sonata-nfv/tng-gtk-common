@@ -218,6 +218,7 @@ We may query which operations are allowed with the `HTTP` verb `OPTIONS`, by iss
 
 ```shell
 $ curl -X OPTIONS :api_root/packages
+<<<<<<< HEAD
 
 ### Services
 Are are on-boarded within packages (see above), so one can not `POST`, `PUT`, `PATCH` or `DELETE` them.
@@ -246,13 +247,19 @@ A specific service's metadata can be fetched using the following command:
 
 ```shell
 $ curl :api_root/services/:service_uuid
+=======
+>>>>>>> 92d71dd037a9473de68f80825e883a26ad1d5216
 ```
 
 Expected returned data is:
 
+<<<<<<< HEAD
 * `HTTP` code `200` (`Ok`) if the service is found, with the service's metadata in the body (`JSON` format);
 * `HTTP` code `400` (`Bad Request`), if the `:service_uuid` is mal-formed;
 * `HTTP` code `404` (`Not Found`), if the service is not found.
+=======
+* `HTTP` code `200` (`No Content`) if the package options are defined;
+>>>>>>> 92d71dd037a9473de68f80825e883a26ad1d5216
 
 ## Database
 
