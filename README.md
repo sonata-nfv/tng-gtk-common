@@ -256,6 +256,15 @@ Expected returned data is:
 * `HTTP` code `400` (`Bad Request`), if the `:service_uuid` is mal-formed;
 * `HTTP` code `404` (`Not Found`), if the service is not found.
 
+#### Options
+
+We may query which operations are allowed with the `HTTP` verb `OPTIONS`, by issuing the following command:
+
+```shell
+$ curl -X OPTIONS :api_root/services
+
+* `HTTP` code `200` (`No Content`) if the services options are defined;
+
 ## Database
 
 Explaining what database (and version) has been used. Provide download links.
