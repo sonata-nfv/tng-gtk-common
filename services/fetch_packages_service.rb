@@ -75,11 +75,11 @@ class FetchPackagesService
         uri = URI.parse(CATALOGUE_URL+'/packages')
         uri.query = URI.encode_www_form(sanitize(params))
       end
-      STDERR.puts "FetchPackagesService#metadata: querying uri=#{uri}"
+      #STDERR.puts "FetchPackagesService#metadata: querying uri=#{uri}"
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      STDERR.puts "FetchPackagesService#metadata: querying response=#{response}"
+      #STDERR.puts "FetchPackagesService#metadata: querying response=#{response}"
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
@@ -88,30 +88,31 @@ class FetchPackagesService
   end
   
   def self.package_file(params)
+    msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
       return nil 
     end
-    STDERR.puts "FetchPackagesService#package_file: params=#{params}"
+    #STDERR.puts "#{msg}: params=#{params}"
     begin
-      package_metadata = metadata(params)
-      STDERR.puts "FetchPackagesService#package_file: package_metadata=#{package_metadata}"
-      return nil unless package_metadata
-      package_file_uuid = package_metadata.fetch(:son_package_uuid, '')
-      STDERR.puts "FetchPackagesService#package_file: package_file_uuid=#{package_file_uuid}"
+      package_metadata = metadata(package_uuid: params['package_uuid'])
+      #STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
+      return nil if package_metadata.to_s.empty?
+      package_file_uuid = package_metadata.fetch(:package_file_id, '')
+      #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
       if package_file_uuid == ''
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, "Package file UUID not set for package '#{params[:package_uuid]}'"]
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID not set for package '#{params[:package_uuid]}'"]
         return nil
       end
-      package_file_name = package_metadata.fetch(:grid_fs_name, '')
+      package_file_name = package_metadata.fetch(:package_file_name, '')
       if package_file_name == ''
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, "Package file name not set for package '#{params[:package_uuid]}'"]
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file name not set for package '#{params[:package_uuid]}'"]
         return nil
       end
       download_and_save_file(package_file_uuid, package_file_name)
       return package_file_name
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
     nil
   end

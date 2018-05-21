@@ -44,7 +44,7 @@ RSpec.describe FetchPackagesService do
     let(:unpackager_url)  {FetchPackagesService::UNPACKAGER_URL}
     let(:possible_status) { ["waiting", "running", "failed", "success"]}
     let(:valid_processing_uuid) {SecureRandom.uuid}
-    let(:status_message) { {package_process_uuid: valid_processing_uuid, status: "waiting", error_msg: "Whatever"}}
+    let(:status_message) { {package_process_uuid: valid_processing_uuid, status: "running", error_msg: ""}}
     it 'breaks unless UNPACKAGER_URL ENV message is defined' do
       expect(described_class.const_defined?(:UNPACKAGER_URL)).to be_truthy   
     end
@@ -107,24 +107,24 @@ RSpec.describe FetchPackagesService do
     
 
     it 'rejects calls with non-existing packages' do
-      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).and_return(nil)
+      allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).and_return(nil)
       expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
     end
-    it 'rejects calls for existing packages without son_package_uuid defined' do
-      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).
-        and_return(incomplete_package_metadata.merge!({son_package_uuid: ''}))
+    it 'rejects calls for existing packages without package_file_id defined' do
+      allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).
+        and_return(incomplete_package_metadata.merge!({package_file_id: ''}))
       expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
     end
     # 
-    it 'rejects calls for existing packages without grid_fs_name defined' do
-      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).
-        and_return(incomplete_package_metadata.merge!({son_package_uuid: package_file_uuid, grid_fs_name: ''}))
+    it 'rejects calls for existing packages without package_file_name defined' do
+      allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).
+        and_return(incomplete_package_metadata.merge!({package_file_id: package_file_uuid, package_file_name: ''}))
       expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
     end
-    it 'accepts calls for existing packages with grid_fs_name defined, saves them and returns file name' do
+    it 'accepts calls for existing packages with package_file_name defined, saves them and returns file name' do
       allow(File).to receive(:read).with('/tmp/abc').and_return('xyz')
-      allow(described_class).to receive(:metadata).with({'package_uuid'=> package_uuid}).
-        and_return(incomplete_package_metadata.merge!({son_package_uuid: package_file_uuid, grid_fs_name: package_file_name}))
+      allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).
+        and_return(incomplete_package_metadata.merge!({package_file_id: package_file_uuid, package_file_name: package_file_name}))
       WebMock.stub_request(:get, catalogue_url+'/tgo-packages/'+package_file_uuid).to_return(body: File.read('/tmp/abc'), status: 200)
       expect(described_class.package_file({'package_uuid'=> package_uuid})).to eq(package_file_name)
     end
