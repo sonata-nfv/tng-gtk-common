@@ -53,6 +53,13 @@ class ServicesController < ApplicationController
     halt 404, {}, {error: ERROR_SERVICE_NOT_FOUND % params[:service_uuid]}.to_json if result.to_s.empty? # covers nil
     halt 200, {}, result.to_json
   end
+  
+  options '/?' do
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,DELETE'      
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
+    halt 200
+  end
     
   private
   def uuid_valid?(uuid)
