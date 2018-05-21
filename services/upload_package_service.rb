@@ -61,7 +61,8 @@ class UploadPackageService
         Curl::PostField.file('package', tempfile.path),
         Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
         Curl::PostField.content('layer', params.fetch('layer', '')),
-        Curl::PostField.content('format', params.fetch('format', ''))
+        Curl::PostField.content('format', params.fetch('format', '')),
+        Curl::PostField.content('skip_store', params.fetch('skip_store', ''))
       )
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
