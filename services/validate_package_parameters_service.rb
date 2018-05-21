@@ -45,6 +45,7 @@ class ValidatePackageParametersService
     # callback_url, optional, string, no default value: URL called after unpackaging
     # layer, optional, string, no default value: Layer tag to be unpackaged
     # format, optional, string, default value eu.5gtango: Package format
+    # skip_store, optional, string, default value eu.5gtango: if just a test to the Package (no storage) is intended
   end
   
   private
