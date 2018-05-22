@@ -108,18 +108,18 @@ RSpec.describe FetchPackagesService do
 
     it 'rejects calls with non-existing packages' do
       allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).and_return(nil)
-      expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
+      expect(described_class.package_file({package_uuid: package_uuid})).to be_falsy
     end
     it 'rejects calls for existing packages without package_file_id defined' do
       allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).
         and_return(incomplete_package_metadata.merge!({package_file_id: ''}))
-      expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
+      expect(described_class.package_file({package_uuid:package_uuid})).to be_falsy
     end
     # 
     it 'rejects calls for existing packages without package_file_name defined' do
       allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).
         and_return(incomplete_package_metadata.merge!({package_file_id: package_file_uuid, package_file_name: ''}))
-      expect(described_class.package_file({'package_uuid'=> package_uuid})).to be_falsy
+      expect(described_class.package_file({package_uuid: package_uuid})).to be_falsy
     end
     it 'accepts calls for existing packages with package_file_name defined, saves them and returns file name' do
       allow(File).to receive(:read).with('/tmp/abc').and_return('xyz')

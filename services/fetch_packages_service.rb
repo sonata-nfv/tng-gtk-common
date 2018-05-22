@@ -136,12 +136,22 @@ class FetchPackagesService
       request = Net::HTTP::Get.new uri
 
       http.request request do |response|
-        open '/tmp/'+file_name, 'w' do |io|
-          response.read_body do |chunk|
-            io.write chunk
-          end
+        open('/tmp/'+file_name, 'wb') do |file|
+          #response.read_body do |chunk|
+          #  io.write chunk
+          file.write(response.body)
+          #end
         end
       end
     end
   end
+
+  # Must be somedomain.net instead of somedomain.net/, otherwise, it will throw exception.
+  #Net::HTTP.start("somedomain.net") do |http|
+  #    resp = http.get("/flv/sample/sample.flv")
+  #    open("sample.flv", "wb") do |file|
+  #        file.write(resp.body)
+  #    end
+  #end
+  
 end
