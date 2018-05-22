@@ -126,7 +126,7 @@ RSpec.describe FetchPackagesService do
       allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).
         and_return(incomplete_package_metadata.merge!({package_file_id: package_file_uuid, package_file_name: package_file_name}))
       WebMock.stub_request(:get, catalogue_url+'/tgo-packages/'+package_file_uuid).to_return(body: File.read('/tmp/abc'), status: 200)
-      expect(described_class.package_file({'package_uuid'=> package_uuid})).to eq(package_file_name)
+      expect(described_class.package_file({package_uuid: package_uuid})).to eq(package_file_name)
     end
   end
 end
