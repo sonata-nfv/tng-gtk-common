@@ -98,7 +98,7 @@ class FetchPackagesService
     STDERR.puts "#{msg}: params=#{params}"
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
-      #STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
+      STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
       return nil if package_metadata.to_s.empty?
       package_file_uuid = package_metadata.fetch(:package_file_id, '')
       #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
@@ -120,11 +120,6 @@ class FetchPackagesService
   end
   
   private
-  
-  def self.symbolyze(arg)
-    arg.is_a?(String) ? arg.to_sym : arg
-  end
-  
   def self.sanitize(params)
     params[:page_number] ||= ENV.fetch('DEFAULT_PAGE_NUMBER', 0)
     params[:page_size]   ||= ENV.fetch('DEFAULT_PAGE_SIZE', 100)
