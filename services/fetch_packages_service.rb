@@ -62,10 +62,12 @@ class FetchPackagesService
   end
 
   def self.metadata(params)
+    msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
       return nil 
     end
+    STDERR.puts "#{msg}: params=#{params}"
     begin
       if params.key?(:package_uuid)
         package_uuid = params.delete :package_uuid
@@ -75,14 +77,14 @@ class FetchPackagesService
         uri = URI.parse(CATALOGUE_URL+'/packages')
         uri.query = URI.encode_www_form(sanitize(params))
       end
-      #STDERR.puts "FetchPackagesService#metadata: querying uri=#{uri}"
+      #STDERR.puts "#{msg}: querying uri=#{uri}"
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      #STDERR.puts "FetchPackagesService#metadata: querying response=#{response}"
+      #STDERR.puts "#{msg}: querying response=#{response}"
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
     nil
   end
@@ -93,7 +95,7 @@ class FetchPackagesService
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
       return nil 
     end
-    #STDERR.puts "#{msg}: params=#{params}"
+    STDERR.puts "#{msg}: params=#{params}"
     begin
       package_metadata = metadata(package_uuid: params['package_uuid'])
       #STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
