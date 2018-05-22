@@ -35,7 +35,8 @@ require 'securerandom'
 
 class PackagesController < ApplicationController
 
-  ERROR_PACKAGE_NOT_FOUND="No package file with UUID '%s' was found"
+  ERROR_PACKAGE_NOT_FOUND="No package with UUID '%s' was found"
+  ERROR_PACKAGE_FILE_NOT_FOUND="No package file for package UUID '%s' was found"
   ERROR_PACKAGE_FILE_PARAMETER_MISSING={error: 'Package file name parameter is missing'}
   ERROR_PACKAGE_CONTENT_TYPE={error: 'Just accepting multipart package files for now'}
   ERROR_PACKAGE_ACCEPTATION={error: 'Problems accepting package for unpackaging and validation...'}
@@ -99,7 +100,7 @@ class PackagesController < ApplicationController
   get '/:package_uuid/package-file/?' do 
     captures=params.delete('captures') if params.key? 'captures'
     file_name = FetchPackagesService.package_file(symbolized_hash(params))
-    halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json if file_name.to_s.empty? # covers nil
+    halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json if file_name.to_s.empty? # covers nil
     send_file '/tmp/'+file_name, type: 'application/zip', filename: file_name
   end
 
