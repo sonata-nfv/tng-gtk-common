@@ -176,8 +176,8 @@ class FetchPackagesService
               }, 
 =end
       #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
-      download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], found_file[:name], 'application/octet-stream')
-      return found_file[:name]
+      download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], found_file[:source], 'application/octet-stream')
+      return found_file[:source]
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
