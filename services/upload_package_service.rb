@@ -53,6 +53,7 @@ class UploadPackageService
   
   def self.call(params, content_type)
     raise ArgumentError.new ERROR_UNPACKAGER_URL_NOT_PROVIDED if UNPACKAGER_URL == ''
+    STDERR.puts "UploadPackageService#call: params=#{params}"
     
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(UNPACKAGER_URL)
@@ -65,7 +66,7 @@ class UploadPackageService
       # c.http_post(post_data)
 
       curl.http_post(
-        Curl::PostField.file('package', tempfile.path),
+        Curl::PostField.file('package', tempfile.path, ),
         Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', '')),
@@ -76,7 +77,6 @@ class UploadPackageService
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
       STDERR.puts "UploadPackageService#call: result=#{result}"
-      STDOUT.puts "UploadPackageService#call: result=#{result}"
     rescue Exception => e
       STDERR.puts e.message  
       STDERR.puts e.backtrace.inspect

@@ -151,6 +151,7 @@ class FetchPackagesService
         return nil
       end
       found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
+      STDERR.puts "#{msg}: found_file=#{found_file}"
       unless found_file
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
         return nil
