@@ -33,6 +33,9 @@
 # encoding: utf-8
 require 'json'
 require 'net/http'
+require 'tempfile'
+require 'fileutils'
+require 'securerandom'
 
 class FetchPackagesService
   
@@ -126,6 +129,18 @@ class FetchPackagesService
     params
   end
   
+  def self.save_file(io)
+    tempfile = Tempfile.new(random_string, '/tmp')
+    io.rewind
+    tempfile.write io.read
+    io.rewind
+    tempfile
+  end
+  
+  def self.random_string
+    (0...8).map { (65 + rand(26)).chr }.join
+  end
+  
   def self.download_and_save_file(file_uuid, file_name)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
     uri = URI.parse(CATALOGUE_URL+'/tgo-packages/'+file_uuid)
@@ -133,15 +148,18 @@ class FetchPackagesService
     request['content-type'] = 'application/zip'
     request['content-disposition'] = 'attachment; filename='+file_name
     Net::HTTP.start(uri.hostname, uri.port) do |http| 
-      request = Net::HTTP::Get.new uri
+      request2 = Net::HTTP::Get.new uri
 
-      http.request request do |response|
-        open('/tmp/'+file_name, 'wb') do |file|
+      http.request request2 do |response|
+        #tempfile = Tempfile.new(random_string, '/tmp')
+        tempfile = Tempfile.new(file_name, '/tmp')
+        #open('/tmp/'+file_name, 'wb') do |file|
           #response.read_body do |chunk|
           #  io.write chunk
-          file.write(response.body)
+          #tempfile.write(response.body.read)
+          tempfile.write(response.read_body)
           #end
-        end
+          #end
       end
     end
   end
