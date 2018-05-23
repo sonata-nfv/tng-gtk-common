@@ -114,8 +114,54 @@ class FetchPackagesService
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file name not set for package '#{params[:package_uuid]}'"]
         return nil
       end
-      download_and_save_file(package_file_uuid, package_file_name)
+      download_and_save_file(CATALOGUE_URL+'/tgo-packages/'+package_file_uuid, package_file_name, 'application/zip')
       return package_file_name
+    rescue Exception => e
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
+    end
+    nil
+  end
+
+  def self.file_by_uuid(params)
+    msg=self.name+'#'+__method__.to_s
+    if CATALOGUE_URL == ''
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
+      return nil 
+    end
+    STDERR.puts "#{msg}: params=#{params}"
+    begin
+      package_metadata = metadata(package_uuid: params[:package_uuid])
+      STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
+      return nil if package_metadata.to_s.empty?
+      package_descriptor = package_metadata.fetch(:pd, {})
+      files = package_descriptor.fetch(:package_content, {})
+      found_file = files.detect {|file| file.uuid == params[:file_uuid] }
+      unless found_file
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
+        return nil
+      end
+=begin
+        "pd": {
+          "description": "This is an example 5GTANGO network service package.", 
+          "descriptor_schema": "https://raw.githubusercontent.com/sonata-nfv/tng-schema/master/package-specification/napd-schema.yml", 
+          "logo": "Icons/upb_logo.png", 
+          "maintainer": "Manuel Peuster, Paderborn University", 
+          "name": "ns-package-example", 
+          "package_content": [
+              {
+                  "algorithm": "SHA-256", 
+                  "content-type": "application/vnd.5gtango.nsd", 
+                  "hash": "a3734cb3eeaa18dee2daf7f2538c4c3be185bead6fc5a28729f44bf78f2b8af8", 
+                  "source": "Definitions/mynsd.yaml", 
+                  "tags": [
+                      "eu.5gtango"
+                  ], 
+                  "uuid": "edf8bfa2-d4cd-435e-9988-f5a4e6eafd1e"
+              }, 
+=end
+      #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
+      download_and_save_file(CATALOGUE_URL+'/files/'+found_file.uuid, found_file.name, 'application/octet-stream')
+      return found_file.name
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
@@ -141,11 +187,11 @@ class FetchPackagesService
     (0...8).map { (65 + rand(26)).chr }.join
   end
   
-  def self.download_and_save_file(file_uuid, file_name)
+  def self.download_and_save_file(file_url, file_name, content_type)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
-    uri = URI.parse(CATALOGUE_URL+'/tgo-packages/'+file_uuid)
+    uri = URI.parse(file_url)
     request = Net::HTTP::Get.new(uri)
-    request['content-type'] = 'application/zip'
+    request['content-type'] = content_type
     request['content-disposition'] = 'attachment; filename='+file_name
     Net::HTTP.start(uri.hostname, uri.port) do |http| 
       request2 = Net::HTTP::Get.new uri
