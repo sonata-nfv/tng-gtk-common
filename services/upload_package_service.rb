@@ -64,9 +64,11 @@ class UploadPackageService
       # c = Curl::Easy.new('http://localhost:3000/foo')
       # c.multipart_form_post = true
       # c.http_post(post_data)
-
+      # params={"package"=>{:filename=>"5gtango-ns-package-example.tgo", :type=>nil, :name=>"package", :tempfile=>#<Tempfile:/tmp/RackMultipart20180523-1-ht5k40.tgo>, :head=>"Content-Disposition: form-data; name=\"package\"; filename=\"5gtango-ns-package-example.tgo\"\r\n"}}
+      package = params.fetch('package', {})
+      filename = package.fetch(:filename, '')
       curl.http_post(
-        Curl::PostField.file('package', tempfile.path, ),
+        Curl::PostField.file('package', tempfile.path, filename),
         Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', '')),
