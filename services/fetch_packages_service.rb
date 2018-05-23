@@ -92,6 +92,28 @@ class FetchPackagesService
     nil
   end
   
+  def self.files(params)
+    msg=self.name+'#'+__method__.to_s
+    if CATALOGUE_URL == ''
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
+      return nil 
+    end
+    STDERR.puts "#{msg}: params=#{params}"
+    begin
+      uri = URI.parse(CATALOGUE_URL+'/packages/'+params[:package_uuid])
+      uri.query = URI.encode_www_form(sanitize(params))
+      #STDERR.puts "#{msg}: querying uri=#{uri}"
+      request = Net::HTTP::Get.new(uri)
+      request['content-type'] = 'application/json'
+      response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
+      #STDERR.puts "#{msg}: querying response=#{response}"
+      return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
+    rescue Exception => e
+      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
+    end
+    nil
+  end
+  
   def self.package_file(params)
     msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
@@ -135,7 +157,7 @@ class FetchPackagesService
       return nil if package_metadata.to_s.empty?
       package_descriptor = package_metadata.fetch(:pd, {})
       files = package_descriptor.fetch(:package_content, {})
-      found_file = files.detect {|file| file.uuid == params[:file_uuid] }
+      found_file = files.detect {|file| file[:uuid] == params[:file_uuid] }
       unless found_file
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
         return nil
@@ -160,8 +182,8 @@ class FetchPackagesService
               }, 
 =end
       #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
-      download_and_save_file(CATALOGUE_URL+'/files/'+found_file.uuid, found_file.name, 'application/octet-stream')
-      return found_file.name
+      download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], found_file[:name], 'application/octet-stream')
+      return found_file[:name]
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end

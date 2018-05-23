@@ -104,6 +104,13 @@ class PackagesController < ApplicationController
     send_file '/tmp/'+file_name, type: 'application/zip', filename: file_name
   end
 
+  get '/:package_uuid/files/?' do 
+    captures=params.delete('captures') if params.key? 'captures'
+    result = FetchPackagesService.files(symbolized_hash(params))
+    halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.to_s.empty? # covers nil
+    halt 200, {}, result.to_json
+  end
+
   get '/:package_uuid/files/:file_uuid?' do 
     captures=params.delete('captures') if params.key? 'captures'
     file_name = FetchPackagesService.file_by_uuid(symbolized_hash(params))
