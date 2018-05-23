@@ -35,7 +35,8 @@ require 'securerandom'
 require 'tempfile'
 require 'fileutils'
 require 'curb'
-require 'net/http/post/multipart'
+#require 'net/http/post/multipart'
+#require 'rest_client'
 
 class UploadPackageService
   
@@ -57,6 +58,12 @@ class UploadPackageService
     curl = Curl::Easy.new(UNPACKAGER_URL)
     curl.multipart_form_post = true
     begin
+      # post_data = fields_hash.map { |k, v| Curl::PostField.content(k, v.to_s) }
+      # post_data << Curl::PostField.file('file', '/path/to/file')
+      # c = Curl::Easy.new('http://localhost:3000/foo')
+      # c.multipart_form_post = true
+      # c.http_post(post_data)
+
       curl.http_post(
         Curl::PostField.file('package', tempfile.path),
         Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
@@ -64,6 +71,8 @@ class UploadPackageService
         Curl::PostField.content('format', params.fetch('format', '')),
         Curl::PostField.content('skip_store', params.fetch('skip_store', 'false'))
       )
+      #RestClient.post('http://localhost:3000/foo', :name_of_file_param => File.new('/path/to/file'))
+        
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
       STDERR.puts "UploadPackageService#call: result=#{result}"

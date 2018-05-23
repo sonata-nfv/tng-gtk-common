@@ -41,6 +41,8 @@ gem 'sinatra-contrib', '2.0.1', require: false
 gem 'sinatra-cross_origin', '0.4.0'
 gem 'faraday', '0.14.0'
 gem 'curb', '0.9.3'
+#gem 'rest_client'
+
 
 gem 'puma', '3.11.0'
 

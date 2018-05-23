@@ -91,29 +91,7 @@ class FetchPackagesService
     end
     nil
   end
-  
-  def self.files(params)
-    msg=self.name+'#'+__method__.to_s
-    if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return nil 
-    end
-    STDERR.puts "#{msg}: params=#{params}"
-    begin
-      uri = URI.parse(CATALOGUE_URL+'/packages/'+params[:package_uuid])
-      uri.query = URI.encode_www_form(sanitize(params))
-      #STDERR.puts "#{msg}: querying uri=#{uri}"
-      request = Net::HTTP::Get.new(uri)
-      request['content-type'] = 'application/json'
-      response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      #STDERR.puts "#{msg}: querying response=#{response}"
-      return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
-    rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
-    end
-    nil
-  end
-  
+    
   def self.package_file(params)
     msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
@@ -123,15 +101,22 @@ class FetchPackagesService
     STDERR.puts "#{msg}: params=#{params}"
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
-      STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
       return nil if package_metadata.to_s.empty?
-      package_file_uuid = package_metadata.fetch(:package_file_id, '')
-      #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
+      STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
+      pd = package_metadata.fetch(:pd, {})
+      if pd == {}
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
+        return nil
+      end
+      STDERR.puts "#{msg}: pd=#{pd}"
+      package_file_uuid = pd.fetch(:package_file_uuid, '')
+      STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
       if package_file_uuid == ''
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID not set for package '#{params[:package_uuid]}'"]
         return nil
       end
-      package_file_name = package_metadata.fetch(:package_file_name, '')
+      package_file_name = pd.fetch(:package_file_name, '')
+      STDERR.puts "#{msg}: package_file_name=#{package_file_name}"
       if package_file_name == ''
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file name not set for package '#{params[:package_uuid]}'"]
         return nil
@@ -155,9 +140,17 @@ class FetchPackagesService
       package_metadata = metadata(package_uuid: params[:package_uuid])
       STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
       return nil if package_metadata.to_s.empty?
-      package_descriptor = package_metadata.fetch(:pd, {})
-      files = package_descriptor.fetch(:package_content, {})
-      found_file = files.detect {|file| file[:uuid] == params[:file_uuid] }
+      pd = package_metadata.fetch(:pd, {})
+      if pd == {}
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
+        return nil
+      end
+      package_content = pd.fetch(:package_content, [])
+      if package_content == []
+        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package package content not set for package '#{params[:package_uuid]}'"]
+        return nil
+      end
+      found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
       unless found_file
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
         return nil
