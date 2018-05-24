@@ -178,7 +178,7 @@ class FetchPackagesService
       #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
       file_name = found_file[:source].split('/').last
       download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
-      return found_file[:source]
+      return file_name
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
