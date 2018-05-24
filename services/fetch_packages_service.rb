@@ -172,14 +172,6 @@ class FetchPackagesService
     params
   end
   
-  def self.save_file(io)
-    tempfile = Tempfile.new(random_string, '/tmp')
-    io.rewind
-    tempfile.write io.read
-    io.rewind
-    tempfile
-  end
-  
   def self.random_string
     (0...8).map { (65 + rand(26)).chr }.join
   end
@@ -197,6 +189,7 @@ class FetchPackagesService
         open('/tmp/'+file_name, 'wb') do |file|
           file.write(response.read_body)
         end
+        STDERR.puts "Content-length = #{response['content-length']} "
         STDERR.puts "File '/tmp/#{file_name} size is #{File.size('/tmp/'+file_name)}"
       end
     end
