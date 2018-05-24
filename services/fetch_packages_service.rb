@@ -143,18 +143,18 @@ class FetchPackagesService
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
-        return nil, nil
+        return [nil, nil]
       end
       package_content = pd.fetch(:package_content, [])
       if package_content == []
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package package content not set for package '#{params[:package_uuid]}'"]
-        return nil, nil
+        return [nil, nil]
       end
       found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
       STDERR.puts "#{msg}: found_file=#{found_file}"
       if found_file.to_s.empty?
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
-        return nil, nil
+        return [nil, nil]
       end
       file_name = found_file[:source].split('/').last
       download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
@@ -163,7 +163,7 @@ class FetchPackagesService
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
-    nil, nil
+    [nil, nil]
   end
   
   private
