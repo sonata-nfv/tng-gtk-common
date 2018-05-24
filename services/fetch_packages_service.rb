@@ -133,57 +133,37 @@ class FetchPackagesService
     msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return nil 
+      return [nil, nil]
     end
     STDERR.puts "#{msg}: params=#{params}"
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
       STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
-      return nil if package_metadata.to_s.empty?
+      return [nil, nil] if package_metadata.to_s.empty?
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
-        return nil
+        return [nil, nil]
       end
       package_content = pd.fetch(:package_content, [])
       if package_content == []
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package package content not set for package '#{params[:package_uuid]}'"]
-        return nil
+        return [nil, nil]
       end
       found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
       STDERR.puts "#{msg}: found_file=#{found_file}"
       if found_file.to_s.empty?
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
-        return nil
+        return [nil, nil]
       end
-=begin
-        "pd": {
-          "description": "This is an example 5GTANGO network service package.", 
-          "descriptor_schema": "https://raw.githubusercontent.com/sonata-nfv/tng-schema/master/package-specification/napd-schema.yml", 
-          "logo": "Icons/upb_logo.png", 
-          "maintainer": "Manuel Peuster, Paderborn University", 
-          "name": "ns-package-example", 
-          "package_content": [
-              {
-                  "algorithm": "SHA-256", 
-                  "content-type": "application/vnd.5gtango.nsd", 
-                  "hash": "a3734cb3eeaa18dee2daf7f2538c4c3be185bead6fc5a28729f44bf78f2b8af8", 
-                  "source": "Definitions/mynsd.yaml", 
-                  "tags": [
-                      "eu.5gtango"
-                  ], 
-                  "uuid": "edf8bfa2-d4cd-435e-9988-f5a4e6eafd1e"
-              }, 
-=end
-      #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
       file_name = found_file[:source].split('/').last
-      STDERR.puts "#{msg}: file_name=#{file_name}"
       download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
-      return file_name
+      STDERR.puts "#{msg}: File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
+      return file_name, found_file[:"content-type"]
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
-    nil
+    [nil, nil]
   end
   
   private
@@ -226,6 +206,7 @@ class FetchPackagesService
           #end
       end
     end
+    STDERR.puts "File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
   end
 
   # Must be somedomain.net instead of somedomain.net/, otherwise, it will throw exception.
