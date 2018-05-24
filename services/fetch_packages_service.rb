@@ -152,7 +152,7 @@ class FetchPackagesService
       end
       found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
       STDERR.puts "#{msg}: found_file=#{found_file}"
-      unless found_file
+      if found_file.to_s.empty?
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
         return nil
       end
@@ -177,6 +177,7 @@ class FetchPackagesService
 =end
       #STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
       file_name = found_file[:source].split('/').last
+      STDERR.puts "#{msg}: file_name=#{file_name}"
       download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
       return file_name
     rescue Exception => e
