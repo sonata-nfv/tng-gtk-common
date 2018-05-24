@@ -33,7 +33,6 @@
 # encoding: utf-8
 require 'json'
 require 'net/http'
-require 'tempfile'
 require 'fileutils'
 require 'securerandom'
 
@@ -195,15 +194,9 @@ class FetchPackagesService
       request2 = Net::HTTP::Get.new uri
 
       http.request request2 do |response|
-        #tempfile = Tempfile.new(random_string, '/tmp')
-        tempfile = Tempfile.new(file_name, '/tmp')
-        #open('/tmp/'+file_name, 'wb') do |file|
-          #response.read_body do |chunk|
-          #  io.write chunk
-          #tempfile.write(response.body.read)
-          tempfile.write(response.read_body)
-          #end
-          #end
+        open('/tmp/'+file_name, 'wb') do |file|
+          file.write(response.read_body)
+        end
       end
     end
     STDERR.puts "File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
