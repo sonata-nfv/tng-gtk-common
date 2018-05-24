@@ -157,8 +157,7 @@ class FetchPackagesService
       end
       file_name = found_file[:source].split('/').last
       download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
-      STDERR.puts "#{msg}: File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)} (size #{File.size('/tmp/'+file_name)}"
-)"
+      STDERR.puts "#{msg}: File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)} (size #{File.size('/tmp/'+file_name)})"
       return file_name, found_file[:"content-type"]
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
