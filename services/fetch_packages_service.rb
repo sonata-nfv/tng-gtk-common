@@ -190,10 +190,19 @@ class FetchPackagesService
       request2 = Net::HTTP::Get.new uri
 
       http.request request2 do |response|
-        body = response.read_body
-        headers = response.to_hash
-        STDERR.puts "#{msg}: headers = #{headers} "
-        STDERR.puts "#{msg}: body size is #{body.bytesize}"
+        case response
+          when Net::HTTPSuccess
+            body = response.read_body
+            headers = response.to_hash
+            STDERR.puts "#{msg}: headers = #{headers} "
+            STDERR.puts "#{msg}: body size is #{body.bytesize}"
+          #when Net::HTTPUnauthorized
+          #  {'error' => "#{response.message}: username and password set and correct?"}
+          #when Net::HTTPServerError
+          #  {'error' => "#{response.message}: try again later?"}
+          #else
+          #  {'error' => response.message}
+        end
       end
     end
     [body, headers]
