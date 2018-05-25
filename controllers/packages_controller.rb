@@ -106,10 +106,11 @@ class PackagesController < ApplicationController
 
   get '/:package_uuid/files/:file_uuid?' do 
     captures=params.delete('captures') if params.key? 'captures'
-    file_name, file_type = FetchPackagesService.file_by_uuid(symbolized_hash(params))
+    body, headers = FetchPackagesService.file_by_uuid(symbolized_hash(params))
     halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json if file_name.to_s.empty? # covers nil
-    STDERR.puts "GET /packages/:package_uuid/files/:file_uuid: File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
-    send_file '/tmp/'+file_name, type: file_type, filename: file_name
+    #STDERR.puts "GET /packages/:package_uuid/files/:file_uuid: File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
+    #send_file '/tmp/'+file_name, type: file_type, filename: file_name
+    halt 200, headers, body
   end
 
   delete '/:package_uuid/?' do 
