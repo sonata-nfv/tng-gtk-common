@@ -100,7 +100,7 @@ class PackagesController < ApplicationController
   get '/:package_uuid/package-file/?' do 
     captures=params.delete('captures') if params.key? 'captures'
     body, headers = FetchPackagesService.package_file(symbolized_hash(params))
-    halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json if file_name.to_s.empty? # covers nil
+    halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json if body.to_s.empty? # covers nil
     halt 200, headers, body
   end
 
