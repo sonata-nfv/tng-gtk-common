@@ -95,37 +95,37 @@ class FetchPackagesService
     msg=self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return nil 
+      return [nil, nil] 
     end
     STDERR.puts "#{msg}: params=#{params}"
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
-      return nil if package_metadata.to_s.empty?
+      return [nil, nil] if package_metadata.to_s.empty?
       STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
-        return nil
+        return [nil, nil]
       end
       STDERR.puts "#{msg}: pd=#{pd}"
       package_file_uuid = pd.fetch(:package_file_uuid, '')
       STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
       if package_file_uuid == ''
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID not set for package '#{params[:package_uuid]}'"]
-        return nil
+        return [nil, nil]
       end
       package_file_name = pd.fetch(:package_file_name, '')
       STDERR.puts "#{msg}: package_file_name=#{package_file_name}"
       if package_file_name == ''
         STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file name not set for package '#{params[:package_uuid]}'"]
-        return nil
+        return [nil, nil]
       end
-      download_and_save_file(CATALOGUE_URL+'/tgo-packages/'+package_file_uuid, package_file_name, 'application/zip')
-      return package_file_name
+      body, headers = download_file(CATALOGUE_URL+'/tgo-packages/'+package_file_uuid, package_file_name, 'application/zip')
+      return [body, headers]
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
-    nil
+    [nil, nil]
   end
 
   def self.file_by_uuid(params)
@@ -156,7 +156,7 @@ class FetchPackagesService
         return [nil, nil]
       end
       file_name = found_file[:source].split('/').last
-      body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name) 
+      body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, 'application/octet-stream') 
       STDERR.puts "#{msg}: body size #{body.bytesize}"
       STDERR.puts "#{msg}: headers  #{headers}"
       return [body, headers]
@@ -177,7 +177,7 @@ class FetchPackagesService
     (0...8).map { (65 + rand(26)).chr }.join
   end
   
-  def self.download_file(file_url, file_name)
+  def self.download_file(file_url, file_name, content_type)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
     msg=self.name+'#'+__method__.to_s
     body = ''
@@ -198,35 +198,15 @@ class FetchPackagesService
             headers = response.to_hash
             STDERR.puts "#{msg}: headers = #{headers} "
             STDERR.puts "#{msg}: body size is #{body.bytesize}"
-          #when Net::HTTPUnauthorized
-          #  {'error' => "#{response.message}: username and password set and correct?"}
-          #when Net::HTTPServerError
-          #  {'error' => "#{response.message}: try again later?"}
+          when Net::HTTPUnauthorized
+            STDERR.puts "#{msg}: response = #{response} "
+          when Net::HTTPServerError
+            STDERR.puts "#{msg}: response = #{response} "
           else
             STDERR.puts "#{msg}: response = #{response} "
         end
       end
     end
     [body, headers]
-  end
-
-  def self.download_and_save_file(file_url, file_name, content_type)
-    #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
-    uri = URI.parse(file_url)
-    request = Net::HTTP::Get.new(uri)
-    request['content-type'] = content_type
-    request['content-disposition'] = 'attachment; filename='+file_name
-    Net::HTTP.start(uri.hostname, uri.port) do |http| 
-      request2 = Net::HTTP::Get.new uri
-
-      http.request request2 do |response|
-        open('/tmp/'+file_name, 'wb') do |file|
-          file.write(response.read_body)
-        end
-        STDERR.puts "Content-length = #{response['content-length']} "
-        STDERR.puts "File '/tmp/#{file_name} size is #{File.size('/tmp/'+file_name)}"
-      end
-    end
-    STDERR.puts "File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
   end
 end
