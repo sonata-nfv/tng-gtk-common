@@ -183,13 +183,14 @@ class FetchPackagesService
     body = ''
     headers ={}
     uri = URI.parse(file_url)
-    request = Net::HTTP::Get.new(uri)
-    request['content-type'] = 'application/octet-stream'
-    request['content-disposition'] = 'attachment; filename='+file_name
-    Net::HTTP.start(uri.hostname, uri.port) do |http| 
-      request2 = Net::HTTP::Get.new uri
 
-      http.request request2 do |response|
+    #     Net::HTTP.start(uri.hostname, uri.port) do |http| 
+    Net::HTTP.start(uri.host, uri.port) do |http|
+      request = Net::HTTP::Get.new uri
+      request['content-type'] = 'application/octet-stream'
+      request['content-disposition'] = 'attachment; filename='+file_name
+
+      http.request request do |response|
         STDERR.puts "#{msg}: response = #{response.inspect} "
         case response
           when Net::HTTPSuccess
