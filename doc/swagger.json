@@ -189,7 +189,6 @@
             }
           ],
           "operationId": "queryPackage",
-          "tags": ["package management"],
           "responses": {
               "200": { "description": "OK, the package query request has been accepted"},
               "400": { "description": "Bad Request" }
@@ -296,6 +295,43 @@
         ],
         "consumes": ["*/*"],
         "produces": ["application/zip"],
+        "responses": {
+          "200": { 
+            "description": "OK",
+            "schema":{
+                  "type":"string",
+                  "format":"binary"
+                }
+          },
+          "400": { "description": "Bad request"},
+          "404": { "description": "Not found"}
+        }
+      }
+    },
+    "/packages/{package_uuid}/files/{file_uuid}": {
+      "get": {
+        "tags": ["package management"],
+        "summary": "Fetch a specific file from within the package",
+        "parameters": [
+          {
+            "name": "package_uuid",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the package which file is required",
+            "type": "string",
+            "format": "uuid"
+          },
+          {
+            "name": "file_uuid",
+            "in": "path",
+            "required": true,
+            "description": "UUID of the file that is required",
+            "type": "string",
+            "format": "uuid"
+          }
+        ],
+        "consumes": ["*/*"],
+        "produces": ["application/octet-stream"],
         "responses": {
           "200": { 
             "description": "OK",
