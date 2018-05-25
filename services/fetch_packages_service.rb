@@ -187,7 +187,7 @@ class FetchPackagesService
     #     Net::HTTP.start(uri.hostname, uri.port) do |http| 
     Net::HTTP.start(uri.host, uri.port) do |http|
       request = Net::HTTP::Get.new uri
-      request['content-type'] = 'application/octet-stream'
+      request['content-type'] = content_type
       request['content-disposition'] = 'attachment; filename='+file_name
 
       http.request request do |response|

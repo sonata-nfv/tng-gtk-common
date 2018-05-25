@@ -94,7 +94,7 @@ Explain your code style and show how to check it.
 
 This component's API is documented in a [Swagger 2.0 file](https://github.com/sonata-nfv/tng-gtk-common/blob/master/doc/swagger.json). The current version does not support any form of authentication, since it is supposed to work with the [API Gateway](https://github.com/sonata-nfv/tng-api-gtw/) component in fron of it.
 
-The current version supports an `api_root` like `http://pre-int-ath.5gtango.eu:32003`. We are using the [`sinatra`](http://sinatrarb.com/) way of representing `URL` parameters, i.e., `:api_root`, `:package_uuid`, etc.
+The current version supports an `api_root` like `http://pre-int-sp-ath.5gtango.eu:32003`. We are using the [`sinatra`](http://sinatrarb.com/) way of representing `URL` parameters, i.e., `:api_root`, `:package_uuid`, etc.
 
 ### Root
 The root (`/`) API of this component can be accessed to return the API it implements (still a WiP).
@@ -197,6 +197,18 @@ Expected returned data is:
 * `HTTP` code `200` (`Ok`) if the package is found, with the package's file in the body (binary format);
 * `HTTP` code `400` (`Bad Request`), if the `:package_uuid` is mal-formed;
 * `HTTP` code `404` (`Not Found`), if the package is not found.
+
+In case we want to download the any of the other files the package may contain, we can use the following command, where the `:file_uuid` can be fetched from the packages metada:
+
+```shell
+$ curl :api_root/packages/:package_uuid/files/:file_uuid
+```
+
+Expected returned data is:
+
+* `HTTP` code `200` (`Ok`) if the file is found, with its content in the body (binary format);
+* `HTTP` code `400` (`Bad Request`), if the `:package_uuid` or `:file_uuid` is mal-formed;
+* `HTTP` code `404` (`Not Found`), if the package or the file is not found.
 
 #### Deleting
 
