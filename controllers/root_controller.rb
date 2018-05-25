@@ -35,10 +35,13 @@ class RootController < ApplicationController
 
   OK_ROOT_ROUTE="This is the root route of the 5GTANGO Service Platform"
   settings.logger.info(self.name) {"Started at #{settings.began_at}"}
-  before { content_type :json}
   
   get '/?' do
     content_type :text
     halt 200, {}, [OK_ROOT_ROUTE]
+  end
+  
+  error Sinatra::NotFound do
+    halt 404, {}, {error: 'Route not found'}.to_json
   end
 end

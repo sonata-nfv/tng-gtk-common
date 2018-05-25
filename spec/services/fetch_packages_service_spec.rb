@@ -137,4 +137,32 @@ RSpec.describe FetchPackagesService do
       expect(described_class.package_file({package_uuid: package_uuid})).to eq(package_file_name)
     end
   end
+  
+  describe '.file_by_uuid' do
+    let(:package_uuid) {SecureRandom.uuid}
+    let(:file_uuid) {SecureRandom.uuid}
+    let(:non_existing_file_uuid) {SecureRandom.uuid}
+    let(:file_content) {'abc.xyz'}
+    let(:package_metadata) {{
+      uuid: package_uuid, 
+      pd: {
+        vendor: '5gtango', name: 'whatever', version: '0.0.1', 
+        package_content: [{
+          :"content-type" => "application/vnd.5gtango.nsd", 
+          source: "Definitions/mynsd.yaml", 
+          uuid: file_uuid
+        }]
+      }
+    }}
+    it 'rejects calls with non-existing files' do
+      allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).and_return(package_metadata)
+      WebMock.stub_request(:get, catalogue_url+'/files/'+file_uuid).to_return(body: file_content, status: 200)
+      expect(described_class.file_by_uuid({package_uuid: package_uuid, file_uuid: non_existing_file_uuid})).to eq([nil, nil])
+    end
+    it 'accepts calls for existing files, returning their body' do
+      allow(described_class).to receive(:metadata).with(package_uuid: package_uuid).and_return(package_metadata)
+      WebMock.stub_request(:get, catalogue_url+'/files/'+file_uuid).to_return(body: file_content, status: 200)
+      expect(described_class.file_by_uuid({package_uuid: package_uuid, file_uuid: file_uuid})).to eq([file_content, {}])
+    end
+  end
 end

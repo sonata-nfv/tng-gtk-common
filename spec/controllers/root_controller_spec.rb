@@ -43,4 +43,10 @@ RSpec.describe RootController, type: :controller do
       expect(last_response.status).to eq(200)
     end
   end
+  describe 'Not found routes return custom error' do
+    it 'returning 404' do
+      get '/a-route-not-to-be-found'
+      expect(last_response.status).to eq(404)
+    end
+  end
 end

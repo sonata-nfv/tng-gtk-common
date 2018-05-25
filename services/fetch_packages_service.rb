@@ -156,9 +156,10 @@ class FetchPackagesService
         return [nil, nil]
       end
       file_name = found_file[:source].split('/').last
-      download_and_save_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
-      STDERR.puts "#{msg}: File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)} (size #{File.size('/tmp/'+file_name)})"
-      return file_name, found_file[:"content-type"]
+      body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
+      STDERR.puts "#{msg}: body size #{body.bytesize}"
+      STDERR.puts "#{msg}: headers  #{headers}"
+      return [body, headers]
     rescue Exception => e
       STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
     end
@@ -176,6 +177,27 @@ class FetchPackagesService
     (0...8).map { (65 + rand(26)).chr }.join
   end
   
+  def self.download_file(file_url, file_name, content_type)
+    #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
+    body = ''
+    headers ={}
+    uri = URI.parse(file_url)
+    request = Net::HTTP::Get.new(uri)
+    request['content-type'] = content_type
+    request['content-disposition'] = 'attachment; filename='+file_name
+    Net::HTTP.start(uri.hostname, uri.port) do |http| 
+      request2 = Net::HTTP::Get.new uri
+
+      http.request request2 do |response|
+        body = response.read_body
+        headers = response.to_hash
+        STDERR.puts "headers = #{headers} "
+        STDERR.puts "body size is #{body.bytesize}"
+      end
+    end
+    [body, headers]
+  end
+
   def self.download_and_save_file(file_url, file_name, content_type)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
     uri = URI.parse(file_url)
@@ -195,13 +217,4 @@ class FetchPackagesService
     end
     STDERR.puts "File '/tmp/#{file_name} exists #{File.exist?('/tmp/'+file_name)}"
   end
-
-  # Must be somedomain.net instead of somedomain.net/, otherwise, it will throw exception.
-  #Net::HTTP.start("somedomain.net") do |http|
-  #    resp = http.get("/flv/sample/sample.flv")
-  #    open("sample.flv", "wb") do |file|
-  #        file.write(resp.body)
-  #    end
-  #end
-  
 end
