@@ -190,6 +190,7 @@ class FetchPackagesService
       request2 = Net::HTTP::Get.new uri
 
       http.request request2 do |response|
+        STDERR.puts "#{msg}: response = #{response.inspect} "
         case response
           when Net::HTTPSuccess
             body = response.read_body
@@ -200,8 +201,8 @@ class FetchPackagesService
           #  {'error' => "#{response.message}: username and password set and correct?"}
           #when Net::HTTPServerError
           #  {'error' => "#{response.message}: try again later?"}
-          #else
-          #  {'error' => response.message}
+          else
+            STDERR.puts "#{msg}: response = #{response} "
         end
       end
     end
