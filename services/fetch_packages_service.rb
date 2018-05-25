@@ -156,7 +156,7 @@ class FetchPackagesService
         return [nil, nil]
       end
       file_name = found_file[:source].split('/').last
-      body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, found_file[:"content-type"]) #'application/octet-stream')
+      body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name) 
       STDERR.puts "#{msg}: body size #{body.bytesize}"
       STDERR.puts "#{msg}: headers  #{headers}"
       return [body, headers]
@@ -177,14 +177,14 @@ class FetchPackagesService
     (0...8).map { (65 + rand(26)).chr }.join
   end
   
-  def self.download_file(file_url, file_name, content_type)
+  def self.download_file(file_url, file_name)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
     msg=self.name+'#'+__method__.to_s
     body = ''
     headers ={}
     uri = URI.parse(file_url)
     request = Net::HTTP::Get.new(uri)
-    request['content-type'] = content_type
+    request['content-type'] = 'application/octet-stream'
     request['content-disposition'] = 'attachment; filename='+file_name
     Net::HTTP.start(uri.hostname, uri.port) do |http| 
       request2 = Net::HTTP::Get.new uri
