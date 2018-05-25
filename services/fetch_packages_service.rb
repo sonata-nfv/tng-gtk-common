@@ -179,6 +179,7 @@ class FetchPackagesService
   
   def self.download_file(file_url, file_name, content_type)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
+    msg=self.name+'#'+__method__.to_s
     body = ''
     headers ={}
     uri = URI.parse(file_url)
@@ -191,8 +192,8 @@ class FetchPackagesService
       http.request request2 do |response|
         body = response.read_body
         headers = response.to_hash
-        STDERR.puts "headers = #{headers} "
-        STDERR.puts "body size is #{body.bytesize}"
+        STDERR.puts "#{msg}: headers = #{headers} "
+        STDERR.puts "#{msg}: body size is #{body.bytesize}"
       end
     end
     [body, headers]
