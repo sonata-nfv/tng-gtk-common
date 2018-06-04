@@ -274,6 +274,7 @@ We may query which operations are allowed with the `HTTP` verb `OPTIONS`, by iss
 
 ```shell
 $ curl -X OPTIONS :api_root/services
+```
 
 * `HTTP` code `200` (`No Content`) if the services options are defined;
 
