@@ -285,4 +285,4 @@ Documents your database design and schemas, relations etc...
 
 ## Licensing
 
-State what the license is and how to find the text version of the license.
+This software has an [Apache2.0](https://github.com/sonata-nfv/tng-gtk-common/blob/master/LICENSE) license.
