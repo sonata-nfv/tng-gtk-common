@@ -1,11 +1,12 @@
-<p align="center"><img src="https://github.com/sonata-nfv/tng-api-gtw/wiki/images/sonata-5gtango-logo-500px.png" /></p>
-
-# 5GTANGO Gatekeeper Common components
-
-[![Build Status](https://jenkins.sonata-nfv.eu/buildStatus/icon?job=tng-api-gtw/master)](https://jenkins.sonata-nfv.eu/job/tng-api-gtw/master)
+[![Build Status](https://jenkins.sonata-nfv.eu/buildStatus/icon?job=tng-gtk-sp/master)](https://jenkins.sonata-nfv.eu/job/tng-gtk-common/master)
 [![Join the chat at https://gitter.im/5gtango/tango-schema](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/5gtango/tango-schema)
 
-This is the 5GTANGO API Gatekeeper Common micro-services for the Verification&amp;Validation and Service Platforms (built on top of [SONATA](https://github.com/sonata-nfv)) repository.
+<p align="center"><img src="https://github.com/sonata-nfv/tng-api-gtw/wiki/images/sonata-5gtango-logo-500px.png" /></p>
+
+# 5GTANGO Gatekeeper common component for the V&V and Service platforms
+This is the **5GTANGO Gatekeeper specific component for the Verification&Validation and the Service platforms** repository, which complements the [SP-](https://github.com/sonata-nfv/tng-gtk-sp) and [V&V-specific](https://github.com/sonata-nfv/tng-gtk-vnv) repositories.
+
+Please see [details on the overall 5GTANGO architecture here](https://5gtango.eu/project-outcomes/deliverables/2-uncategorised/31-d2-2-architecture-design.html). 
 
 ## Installing / Getting started
 
