@@ -30,16 +30,18 @@
 ## acknowledge the contributions of their colleagues of the 5GTANGO
 ## partner consortium (www.5gtango.eu).
 # encoding: utf-8
-require 'sinatra/base'
-require './controllers/application_controller.rb'
-require './controllers/packages_controller.rb'
-require './controllers/services_controller.rb'
-require './controllers/functions_controller.rb'
-require './controllers/pings_controller.rb'
-require './controllers/root_controller.rb'
-Dir.glob('./services/*.rb').each { |file| require file }
-map('/packages') { run PackagesController }
-map('/services') { run ServicesController }
-map('/functions') { run FunctiosController }
-map('/pings') { run PingsController }
-map('/') { run RootController }
+require 'net/http'
+require 'ostruct'
+require 'json'
+require_relative './fetch_service'
+
+class FetchVNFDsService < FetchService
+  NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch functions'
+  CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
+  if CATALOGUE_URL == ''
+    STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, 'FetchVNFDService', NO_CATALOGUE_URL_DEFINED_ERROR]
+    raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
+  end
+  self.site=CATALOGUE_URL+'/vnfs'
+  STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, 'FetchVNFDService', "self.site=#{self.site}"]
+end
