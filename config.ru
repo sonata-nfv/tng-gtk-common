@@ -40,6 +40,6 @@ require './controllers/root_controller.rb'
 Dir.glob('./services/*.rb').each { |file| require file }
 map('/packages') { run PackagesController }
 map('/services') { run ServicesController }
-map('/functions') { run FunctiosController }
+map('/functions') { run FunctionsController }
 map('/pings') { run PingsController }
 map('/') { run RootController }
