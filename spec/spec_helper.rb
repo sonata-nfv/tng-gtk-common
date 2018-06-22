@@ -42,7 +42,7 @@ require File.dirname(__FILE__) + '/../services/upload_package_service'
 require File.dirname(__FILE__) + '/../services/fetch_packages_service'
 require File.dirname(__FILE__) + '/../services/fetch_services_service'
 require File.dirname(__FILE__) + '/../services/fetch_service'
-require File.dirname(__FILE__) + '/../services/fetch_nsd_service'
+#require File.dirname(__FILE__) + '/../services/fetch_nsd_service'
 require File.dirname(__FILE__) + '/../services/fetch_vnfds_service'
 require File.dirname(__FILE__) + '/../services/delete_packages_service'
 
