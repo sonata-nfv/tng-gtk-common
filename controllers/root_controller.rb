@@ -34,7 +34,7 @@ require 'logger'
 class RootController < ApplicationController
 
   OK_ROOT_ROUTE="This is the root route of the 5GTANGO Service Platform"
-  settings.logger.info(self.name) {"Started at #{settings.began_at}"}
+  settings.logger.info(self.name) {"Started at #{Time.now.utc}"}
   
   get '/?' do
     content_type :text
@@ -42,6 +42,6 @@ class RootController < ApplicationController
   end
   
   error Sinatra::NotFound do
-    halt 404, {}, {error: 'Route not found'}.to_json
+    halt 404, {}, {error: 'Route #{request.url} not found'}.to_json
   end
 end
