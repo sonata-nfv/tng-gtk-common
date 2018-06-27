@@ -71,6 +71,7 @@ RSpec.describe PackagesController, type: :controller do
   end
   describe 'Accepts callbacks' do
     let(:package_process_uuid) {SecureRandom.uuid}
+    let(:location_url) {'http://example.com:4321'}
     let(:optional_valid_event_data) {{
       package_id: "string", 
       package_location: "string",
@@ -84,8 +85,9 @@ RSpec.describe PackagesController, type: :controller do
     let(:valid_result) { {package_process_uuid: package_process_uuid, result: valid_event_data}}
     it 'returning 200 when everything was ok' do
       allow(ValidateEventParametersService).to receive(:call).with(valid_event_data.to_json).and_return(valid_event_data)
-      allow(UploadPackageService).to receive(:process_callback).with(valid_event_data).and_return(valid_result)
+      allow(UploadPackageService).to receive(:process_callback).with(valid_event_data, location_url).and_return(valid_result)
       post '/on-change', valid_event_data.to_json, {"Content-Type"=>"application/json"}
+      STDERR.puts "last_response=#{last_response.inspect}"
       expect(last_response).to be_ok
       expect(last_response.body).to eq(valid_result.to_json)
       #{"package_process_uuid":"0afa8290-13cd-4fa0-8af2-cc9865a0c6e0","result":{"package_id":"string","package_location":"string","package_metadata\":\"string","event_name":"onPackageChangeEvent\","package_process_status":"string","package_process_uuid\":"0afa8290-13cd-4fa0-8af2-cc9865a0c6e0"}}"]
