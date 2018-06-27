@@ -93,6 +93,7 @@ class UploadPackageService
     result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
     notify_user(params)
+    STDERR.puts "UploadPackageService#process_callback: result=#{result}"
     result
   end
   

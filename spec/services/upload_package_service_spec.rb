@@ -55,12 +55,12 @@ RSpec.describe UploadPackageService do
     it 'calls the unpackager' do
       stub_request(:post, unpackager_url).
         to_return(status: 200, body: result.to_json, headers: {})
-      expect(UploadPackageService.call(params, content_type)).to eq(result)
+      expect(described_class.call(params, content_type)).to eq(result)
     end
   end
   describe '.process_callback' do
     let(:event_data) { {event_name: "evt", package_id: "123", package_location: "xyz", package_process_uuid: "abc"}}
-    let(:location_url) {'http://example.com:4321'}
+    let(:location_url) {'http://example.com'}
     before(:each) {
       WebMock.stub_request(:post, external_callback_url).
         with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
