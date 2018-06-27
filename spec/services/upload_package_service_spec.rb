@@ -55,11 +55,12 @@ RSpec.describe UploadPackageService do
     it 'calls the unpackager' do
       stub_request(:post, unpackager_url).
         to_return(status: 200, body: result.to_json, headers: {})
-      expect(UploadPackageService.call(params, content_type)).to eq(result)
+      expect(described_class.call(params, content_type)).to eq(result)
     end
   end
   describe '.process_callback' do
     let(:event_data) { {event_name: "evt", package_id: "123", package_location: "xyz", package_process_uuid: "abc"}}
+    let(:location_url) {'http://example.com'}
     before(:each) {
       WebMock.stub_request(:post, external_callback_url).
         with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
@@ -74,15 +75,15 @@ RSpec.describe UploadPackageService do
     }
     it 'calls the external callback' do
       described_class.class_variable_set :@@internal_callbacks, {abc: { user_callback: user_callback_url, result: event_data}}
-      expect{described_class.process_callback(event_data)}.not_to raise_error
+      expect{described_class.process_callback(event_data, location_url)}.not_to raise_error
     end
     it 'calls the user callback (if exists)' do
       described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
-      expect{described_class.process_callback(event_data)}.not_to raise_error
+      expect{described_class.process_callback(event_data, location_url)}.not_to raise_error
     end
     it 'does not call the user callback when it does not exist' do
       described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
-      expect{described_class.process_callback(event_data)}.not_to raise_error
+      expect{described_class.process_callback(event_data, location_url)}.not_to raise_error
     end
   end
 end

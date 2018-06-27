@@ -65,10 +65,11 @@ class PackagesController < ApplicationController
   # Callback for the tng-sdk-packager to notify the result of processing
   post '/on-change/?' do
     STDERR.puts "PackagesController POST on-change: request.content_type=#{request.content_type}"
+    STDERR.puts "PackagesController POST on-change: request.base_url=#{request.base_url}"
     #halt 400, {}, {error: ERROR_EVENT_CONTENT_TYPE % request.content_type}.to_json unless request.content_type =~ /application\/json/
     begin
       event_data = ValidateEventParametersService.call(request.body.read)
-      result = UploadPackageService.process_callback(event_data)
+      result = UploadPackageService.process_callback(event_data, request.base_url)
       halt 200, {}, result.to_json unless result == {}
       halt 404, {}, {error: "Package processing UUID not found in event #{event_data}"}.to_json
     rescue ArgumentError => e
