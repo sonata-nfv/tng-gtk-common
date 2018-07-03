@@ -153,6 +153,7 @@ class UploadPackageService
     tempfile = Tempfile.new(random_string, '/tmp')
     io.rewind
     tempfile.write io.read
+    tempfile.flush
     io.rewind
     tempfile
   end
