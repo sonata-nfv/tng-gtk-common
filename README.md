@@ -6,7 +6,9 @@
 # Common Gatekeeper component for the V&V and Service platforms
 This is the **5GTANGO common Gatekeeper component for the Verification&Validation and the Service platforms** repository, which complements the [SP-](https://github.com/sonata-nfv/tng-gtk-sp) and [V&V-specific](https://github.com/sonata-nfv/tng-gtk-vnv) repositories.
 
-Please see [details on the overall 5GTANGO architecture here](https://5gtango.eu/project-outcomes/deliverables/2-uncategorised/31-d2-2-architecture-design.html).
+Please see [details on the overall 5GTANGO architecture here](https://5gtango.eu/project-outcomes/deliverables/2-uncategorised/31-d2-2-architecture-design.html) and the following picture.
+
+<p align="center"><img src="https://github.com/sonata-nfv/tng-api-gtw/wiki/images/GKs_place_in_5GTANGO_architecture.png" /></p>
 
 ## Installing / Getting started
 
