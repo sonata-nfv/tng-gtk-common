@@ -45,6 +45,7 @@ require File.dirname(__FILE__) + '/../services/fetch_service'
 require File.dirname(__FILE__) + '/../services/fetch_nsd_service'
 require File.dirname(__FILE__) + '/../services/fetch_vnfds_service'
 require File.dirname(__FILE__) + '/../services/delete_packages_service'
+require File.dirname(__FILE__) + '/../services/cache_service'
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods

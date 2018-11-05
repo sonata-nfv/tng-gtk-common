@@ -29,48 +29,64 @@
 ## the Horizon 2020 and 5G-PPP programmes. The authors would like to
 ## acknowledge the contributions of their colleagues of the 5GTANGO
 ## partner consortium (www.5gtango.eu).
-# frozen_string_literal: true
 # encoding: utf-8
-require 'json'
-require 'net/http'
+require 'redis'
 
-class FetchServicesService
+class CacheService
   
-  # curl http://localhost:4011/catalogues/api/v2
-  CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
-  NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch services'
-  
-  def self.call(params)
-    msg=self.name+'#'+__method__.to_s
-    if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return nil 
+  class RedisCache 
+    class << self
+      attr_accessor :store
     end
-    begin
-      if params.key?(:service_uuid)
-        service_uuid = params.delete :service_uuid
-        uri = URI.parse(CATALOGUE_URL+'/network-services/'+service_uuid)
-        # mind that there ccany be more params, so we might need to pass params as well
-      else
-        uri = URI.parse(CATALOGUE_URL+'/network-services')
-        uri.query = URI.encode_www_form(sanitize(params))
-      end
-      STDERR.puts "#{msg}: querying uri=#{uri}"
-      request = Net::HTTP::Get.new(uri)
-      request['content-type'] = 'application/json'
-      response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      STDERR.puts "#{msg}: querying response=#{response}"
-      return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
-    rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
-    end
-    nil
-  end
     
-  private
-  def self.sanitize(params)
-    params[:page_number] ||= ENV.fetch('DEFAULT_PAGE_NUMBER', 0)
-    params[:page_size]   ||= ENV.fetch('DEFAULT_PAGE_SIZE', 100)
-    params
+    def store=(value) self.class.store = value end
+    def store() self.class.store end
+
+    begin
+      self.store = Redis.new
+    rescue StandardError => e
+      e.inspect
+      e.message
+    end
+    def self.set(key, val) self.store.set(key, val) end
+    def self.get(key)      self.store.get(key) end
+    def self.del(key)      self.store.set(key, nil) end
   end
+  
+  class MemoryCache
+    class << self
+      attr_accessor :store
+    end
+    def store=(value) self.class.store = value end
+    def store() self.class.store end
+    self.store = {}
+    def self.set(key, val) self.store[key] = val end
+    def self.get(key)      self.store[key] end
+    def self.del(key)      self.store[key] = nil end
+  end
+
+  STRATEGIES = {
+    redis: RedisCache, #CacheService::RedisCache,
+    memory: MemoryCache, #CacheService::MemoryCache
+  }
+  class << self
+    attr_accessor :strategy
+  end
+
+  def strategy=(value) self.class.strategy = value end
+  def strategy() self.class.strategy end
+  
+  self.strategy = ENV['REDIS_URL'] ? STRATEGIES[:redis] : STRATEGIES[:memory]
+  STDERR.puts "Strategy used: #{self.strategy}"
+  
+  def self.set(key, val)
+    STDERR.puts "Setting key '#{key}' with value '#{val}' (strategy #{self.strategy})"
+    self.strategy.set(key, val)
+  end
+  def self.get(key)
+    STDERR.puts "Getting key '#{key}' (strategy #{self.strategy})"
+    self.strategy.get(key)
+  end
+  def self.del(key)      self.strategy.del(key) end
+  
 end
