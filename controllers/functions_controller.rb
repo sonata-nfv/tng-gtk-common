@@ -29,44 +29,48 @@
 # encoding: utf-8
 require 'sinatra'
 require 'json'
-require 'logger'
 require 'securerandom'
+require 'tng/gtk/utils/logger'
 
 class FunctionsController < ApplicationController
 
   ERROR_FUNCTION_NOT_FOUND="No function with UUID '%s' was found"
-
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGED_COMPONENT=self.name
   @@began_at = Time.now.utc
-  settings.logger.info(self.name) {"Started at #{@@began_at}"}
-  before { content_type :json}
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   get '/?' do 
-    msg='FunctionsController.get (many)'
+    msg='.get (many)'
     captures=params.delete('captures') if params.key? 'captures'
-    STDERR.puts "#{msg}: params=#{params}"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     result = FetchVNFDsService.call(symbolized_hash(params))
-    STDERR.puts "#{msg}: result=#{result}"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     halt 404, {}, {error: "No functions fiting the provided parameters ('#{params}') were found"}.to_json if result.to_s.empty? # covers nil
     halt 200, {}, result.to_json
   end
   
   get '/:function_uuid/?' do 
-    msg='FunctionsController.get (single)'
+    msg='.get (single)'
     captures=params.delete('captures') if params.key? 'captures'
-    STDERR.puts "#{msg}: params['function_uuid']='#{params['function_uuid']}'"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params['function_uuid']='#{params['function_uuid']}'")
     result = FetchVNFDsService.call(uuid: params['function_uuid'])
-    STDERR.puts "#{msg}: result=#{result}"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     halt 404, {}, {error: ERROR_FUNCTION_NOT_FOUND % params['function_uuid']}.to_json if result == {}
     halt 200, {}, result.to_json
   end
   
   options '/?' do
+    msg='options'
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"called")
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET,DELETE'      
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
     halt 200
   end
-    
+  
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - @@began_at)
+  
   private
   def uuid_valid?(uuid)
     return true if (uuid =~ /[a-f0-9]{8}-([a-f0-9]{4}-){3}[a-f0-9]{12}/) == 0

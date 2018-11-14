@@ -47,12 +47,12 @@ RSpec.describe FetchVNFDsService do
     end
     context 'with UUID' do
       it 'returns the requested function meta-data' do
-        expect(CacheService).to receive(:get).with(uuid_1).and_return(nil)
+        expect(Tng::Gtk::Utils::Cache).to receive(:cached?).with(uuid_1).and_return('')
         WebMock.stub_request(:get, site+'/'+uuid_1).to_return(status: 200, body: function_1_metadata.to_json, headers: {})
         expect(described_class.call(uuid: uuid_1)).to eq(function_1_metadata)
       end
       it 'returns {} when the requested function does not exist' do
-        expect(CacheService).to receive(:get).with(uuid_2).and_return(nil)
+        expect(Tng::Gtk::Utils::Cache).to receive(:cached?).with(uuid_2).and_return('')
         WebMock.stub_request(:get, site+'/'+uuid_2).to_return(status: 404, body: '', headers: {})
         expect(described_class.call(uuid: uuid_2)).to eq({})
       end
