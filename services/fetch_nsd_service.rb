@@ -33,17 +33,20 @@
 require 'net/http'
 require 'ostruct'
 require 'json'
-require_relative './fetch_service'
+require 'tng/gtk/utils/logger'
+require 'tng/gtk/utils/fetch'
 
-class FetchNSDService < FetchService
-  
+class FetchNSDService < Tng::Gtk::Utils::Fetch
   NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch services'
+  LOGGER=Tng::Gtk::Utils::Logger
+  
   CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
   if CATALOGUE_URL == ''
-    STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, 'FetchNSDService', NO_CATALOGUE_URL_DEFINED_ERROR]
+    LOGGER.error(component:'FetchNSDService', operation:'fetching CATALOGUE_URL ENV variable', message:NO_CATALOGUE_URL_DEFINED_ERROR)
     raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
   end
   self.site=CATALOGUE_URL+'/network-services'
+  LOGGER.info(component:'FetchNSDService', operation:'site definition', message:"self.site=#{self.site}")
 end
 
 

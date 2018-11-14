@@ -46,5 +46,5 @@ class FetchVNFDsService < Tng::Gtk::Utils::Fetch
     raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
   end
   self.site=CATALOGUE_URL+'/vnfs'
-  LOGGER.error(component:'FetchVNFDsService', operation:'site definition', message:"self.site=#{self.site}")
+  LOGGER.info(component:'FetchVNFDsService', operation:'site definition', message:"self.site=#{self.site}")
 end
