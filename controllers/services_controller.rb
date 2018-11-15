@@ -48,7 +48,7 @@ class ServicesController < ApplicationController
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
-    result = FetchServicesService.call(symbolized_hash(params))
+    result = FetchNSDService.call(symbolized_hash(params))
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     if result.to_s.empty? # covers nil
       LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '404', time_elapsed:"#{Time.now.utc-began_at}")
@@ -64,7 +64,7 @@ class ServicesController < ApplicationController
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params['service_uuid']='#{params['service_uuid']}'")
-    result = FetchServicesService.call(symbolized_hash(params))
+    result = FetchNSDService.call(symbolized_hash(params))
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     if result.to_s.empty? # covers nil
       LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '404', time_elapsed:"#{Time.now.utc-began_at}")
