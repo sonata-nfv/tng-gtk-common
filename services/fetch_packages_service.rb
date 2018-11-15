@@ -35,6 +35,7 @@ require 'json'
 require 'net/http'
 require 'fileutils'
 require 'securerandom'
+require 'tng/gtk/utils/logger'
 
 class FetchPackagesService
   
@@ -43,14 +44,24 @@ class FetchPackagesService
   NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'
   UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
   NO_UNPACKAGER_URL_DEFINED_ERROR='The UNPACKAGER_URL ENV variable needs to defined and pointing to the Packager component URL'
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGED_COMPONENT=self.name
+  @@began_at = Time.now.utc
+  if CATALOGUE_URL == ''
+    LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:NO_CATALOGUE_URL_DEFINED_ERROR)
+    return nil 
+  end
+  if UNPACKAGER_URL == ''
+    LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:NO_UNPACKAGER_URL_DEFINED_ERROR)
+    return nil 
+  end
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   def self.status(process_id)
     # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
     # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
-    if UNPACKAGER_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return nil 
-    end
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
     begin
       uri = URI.parse(UNPACKAGER_URL+'/status/'+process_id)
       request = Net::HTTP::Get.new(uri)
@@ -58,18 +69,16 @@ class FetchPackagesService
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, self.name+'#'+__method__.to_s, e.message]
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
     end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     nil
   end
 
   def self.metadata(params)
-    msg=self.name+'#'+__method__.to_s
-    if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return nil 
-    end
-    STDERR.puts "#{msg}: params=#{params}"
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     begin
       if params.key?(:package_uuid)
         package_uuid = params.delete :package_uuid
@@ -79,90 +88,100 @@ class FetchPackagesService
         uri = URI.parse(CATALOGUE_URL+'/packages')
         uri.query = URI.encode_www_form(sanitize(params))
       end
-      #STDERR.puts "#{msg}: querying uri=#{uri}"
       request = Net::HTTP::Get.new(uri)
       request['content-type'] = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      #STDERR.puts "#{msg}: querying response=#{response}"
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
     end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     nil
   end
     
   def self.package_file(params)
-    msg=self.name+'#'+__method__.to_s
-    if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return [nil, nil] 
-    end
-    STDERR.puts "#{msg}: params=#{params}"
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
-      return [nil, nil] if package_metadata.to_s.empty?
-      STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
+      if package_metadata.to_s.empty?
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package metadata for params #{params} is empty")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        return [nil, nil] 
+      end
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_metadata=#{package_metadata}")
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package descriptor not set for package '#{params[:package_uuid]}'")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
         return [nil, nil]
       end
-      STDERR.puts "#{msg}: pd=#{pd}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"pd=#{pd}")
       package_file_uuid = pd.fetch(:package_file_uuid, '')
-      STDERR.puts "#{msg}: package_file_uuid=#{package_file_uuid}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_file_uuid=#{package_file_uuid}")
       if package_file_uuid == ''
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID not set for package '#{params[:package_uuid]}'"]
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package file UUID not set for package '#{params[:package_uuid]}'")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
         return [nil, nil]
       end
       package_file_name = pd.fetch(:package_file_name, '')
-      STDERR.puts "#{msg}: package_file_name=#{package_file_name}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_file_name=#{package_file_name}")
       if package_file_name == ''
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file name not set for package '#{params[:package_uuid]}'"]
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package file name not set for package '#{params[:package_uuid]}'")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
         return [nil, nil]
       end
       body, headers = download_file(CATALOGUE_URL+'/tgo-packages/'+package_file_uuid, package_file_name, 'application/zip')
+      LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       return [body, headers]
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
     end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     [nil, nil]
   end
 
   def self.file_by_uuid(params)
-    msg=self.name+'#'+__method__.to_s
-    if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
-      return [nil, nil]
-    end
-    STDERR.puts "#{msg}: params=#{params}"
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
-      STDERR.puts "#{msg}: package_metadata=#{package_metadata}"
-      return [nil, nil] if package_metadata.to_s.empty?
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_metadata=#{package_metadata}")
+      if package_metadata.to_s.empty?
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package metadata for params #{params} is empty")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        return [nil, nil] 
+      end
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package descriptor not set for package '#{params[:package_uuid]}'"]
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package descriptor not set for package '#{params[:package_uuid]}'")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
         return [nil, nil]
       end
       package_content = pd.fetch(:package_content, [])
       if package_content == []
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package package content not set for package '#{params[:package_uuid]}'"]
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package package content not set for package '#{params[:package_uuid]}'")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
         return [nil, nil]
       end
       found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
-      STDERR.puts "#{msg}: found_file=#{found_file}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"found_file=#{found_file}")
       if found_file.to_s.empty?
-        STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, "Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'"]
+        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'")
+        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
         return [nil, nil]
       end
       file_name = found_file[:source].split('/').last
       body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, 'application/octet-stream') 
-      STDERR.puts "#{msg}: body size #{body.bytesize}"
-      STDERR.puts "#{msg}: headers  #{headers}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"body size #{body.bytesize}, headers  #{headers}")
+      LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       return [body, headers]
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
     end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     [nil, nil]
   end
   
@@ -179,7 +198,8 @@ class FetchPackagesService
   
   def self.download_file(file_url, file_name, content_type)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
-    msg=self.name+'#'+__method__.to_s
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
     body = ''
     headers ={}
     uri = URI.parse(file_url)
@@ -191,22 +211,23 @@ class FetchPackagesService
       request['content-disposition'] = 'attachment; filename='+file_name
 
       http.request request do |response|
-        STDERR.puts "#{msg}: response = #{response.inspect} "
+        LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response.inspect}")
         case response
           when Net::HTTPSuccess
             body = response.read_body
             headers = response.to_hash
-            STDERR.puts "#{msg}: headers = #{headers} "
-            STDERR.puts "#{msg}: body size is #{body.bytesize}"
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"body size #{body.bytesize}, headers  #{headers}")
           when Net::HTTPUnauthorized
-            STDERR.puts "#{msg}: response = #{response} "
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response}")
           when Net::HTTPServerError
-            STDERR.puts "#{msg}: response = #{response} "
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response}")
           else
-            STDERR.puts "#{msg}: response = #{response} "
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response}")
         end
       end
     end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - @@began_at)
     [body, headers]
   end
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - @@began_at)
 end
