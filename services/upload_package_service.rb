@@ -35,8 +35,6 @@ require 'securerandom'
 require 'tempfile'
 require 'fileutils'
 require 'curb'
-#require 'net/http/post/multipart'
-#require 'rest_client'
 
 class UploadPackageService
   
@@ -50,10 +48,16 @@ class UploadPackageService
   ERROR_UNPACKAGER_URL_NOT_PROVIDED='You must provide the un-packager URL as the UNPACKAGER_URL environment variable'
   ERROR_EXCEPTION_RAISED='Exception raised while posting package or parsing answer'
   @@internal_callbacks = {}
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGED_COMPONENT=self.name
+  LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:ERROR_UNPACKAGER_URL_NOT_PROVIDED) if UNPACKAGER_URL == ''
+  @@began_at = Time.now.utc
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   def self.call(params, content_type)
-    raise ArgumentError.new ERROR_UNPACKAGER_URL_NOT_PROVIDED if UNPACKAGER_URL == ''
-    STDERR.puts "UploadPackageService#call: params=#{params}"
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(UNPACKAGER_URL)
@@ -74,13 +78,14 @@ class UploadPackageService
         
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
-      STDERR.puts "UploadPackageService#call: result=#{result}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{result}")
     rescue Exception => e
-      STDERR.puts e.message  
-      STDERR.puts e.backtrace.inspect
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"#{e.message}: #{e.backtrace.inspect}")
+      LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       raise Error.new(ERROR_EXCEPTION_RAISED) 
     end
     save_user_callback( result[:package_process_uuid], params['callback_url'])
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     result
   end
   
@@ -88,23 +93,39 @@ class UploadPackageService
     # example: https://gist.github.com/mpeuster/4a302c2667dfa1ed428b3c993534841d
     #"package_id":"471504c1-5a05-41e6-b652-b5d6af7db8ec",
     #"package_location":"http://127.0.0.1:4011/catalogues/api/v2/packages/471504c1-5a05-41e6-b652-b5d6af7db8ec",
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     params[:package_location] = "#{url}/api/v3/packages/#{params[:package_id]}"
-    STDERR.puts "UploadPackageService#process_callback: params=#{params}"
     result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
     notify_user(params)
-    STDERR.puts "UploadPackageService#process_callback: result=#{result}"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{result}")
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     result
   end
   
   def self.status(process_id)
     # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
     # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
+    began_at = Time.now.utc
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"process_id=#{process_id}")
     process = db_get(process_id)
-    return {} if process == nil
-    STDERR.puts "UploadPackageService#status result for #{process_id}=#{process[:result]}"
-    return process[:result] unless process[:result].to_s.empty?
-    FetchPackagesService.status(process_id)
+    if process == nil
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"process is nil")
+      LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+      return {} 
+    end
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result for #{process_id}=#{process[:result]}")
+    unless process[:result].to_s.empty?
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"#{e.message}: #{e.backtrace.inspect}")
+      LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+      return process[:result] 
+    end
+    status = FetchPackagesService.status(process_id)
+    LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+    status
   end
   
   private
@@ -119,7 +140,7 @@ class UploadPackageService
     process = db_get result[:package_process_uuid]
     return {} if process == nil
     process[:result]= result
-    STDERR.puts "UploadPackageService#save_result: result=#{process[:result]}"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{process[:result]}")
     process
   end
   
@@ -128,9 +149,9 @@ class UploadPackageService
       curl = Curl::Easy.http_post( EXTERNAL_CALLBACK_URL, params.to_json) do |request|
         request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
       end
-      STDERR.puts "UploadPackageService#notify_external_systems: params=#{params}"
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
-      STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to external callback #{EXTERNAL_CALLBACK_URL}"]
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to external callback #{EXTERNAL_CALLBACK_URL}")
     end
   end
   
@@ -138,14 +159,14 @@ class UploadPackageService
     process = db_get(params[:package_process_uuid])
     return if process == nil
     user_callback = process[:user_callback]
-    STDERR.puts "UploadPackageService#notify_user: user_callback=#{user_callback}"
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"user_callback=#{user_callback}")
     return if user_callback.to_s.empty?
     begin
       resp = Curl::Easy.http_post( user_callback, params.to_json) do |http|
         http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'
       end
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
-      STDERR.puts "%s - %s: %s", [Time.now.utc.to_s, self.class.name+'#'+__method__.to_s, "Failled to post to user's callback #{user_callback}"]
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to user's callback #{user_callback}")
     end
   end
 
@@ -165,4 +186,5 @@ class UploadPackageService
   def self.random_string
     (0...8).map { (65 + rand(26)).chr }.join
   end
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - @@began_at)
 end

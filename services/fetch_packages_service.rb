@@ -49,11 +49,11 @@ class FetchPackagesService
   @@began_at = Time.now.utc
   if CATALOGUE_URL == ''
     LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:NO_CATALOGUE_URL_DEFINED_ERROR)
-    return nil 
+    raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
   end
   if UNPACKAGER_URL == ''
     LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:NO_UNPACKAGER_URL_DEFINED_ERROR)
-    return nil 
+    raise ArgumentError.new(NO_UNPACKAGER_URL_DEFINED_ERROR) 
   end
   LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
