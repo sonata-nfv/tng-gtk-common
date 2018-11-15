@@ -43,20 +43,20 @@ RSpec.describe ServicesController, type: :controller do
     let(:services_metadata) {[service_1_metadata, service_2_metadata]}
     
     it 'adding default parameters for page size and number' do
-      allow(FetchServicesService).to receive(:call).with({}).and_return(services_metadata)
+      allow(FetchNSDService).to receive(:call).with({}).and_return(services_metadata)
       get '/'
       expect(last_response).to be_ok
       expect(last_response.body).to eq(services_metadata.to_json)
     end
     
     it 'returning not found (404) when an error occurs' do
-      allow(FetchServicesService).to receive(:call).with({}).and_return(nil)
+      allow(FetchNSDService).to receive(:call).with({}).and_return(nil)
       get '/'
       expect(last_response.status).to eq(404)
     end
     
     it 'returning Ok (200) and an empty array when no package is found' do
-      allow(FetchServicesService).to receive(:call).with({}).and_return([])
+      allow(FetchNSDService).to receive(:call).with({}).and_return([])
       get '/'
       expect(last_response).to be_ok
       expect(last_response.body).to eq([].to_json)
@@ -66,7 +66,7 @@ RSpec.describe ServicesController, type: :controller do
     let(:uuid) {SecureRandom.uuid}
     let(:service_metadata) { {service_uuid: uuid, nsd: {vendor: '5gtango', name: 'whatever', version: '0.0.1'}}}
     it 'returning Ok (200) and the servive meta-data when the service is found' do
-      allow(FetchServicesService).to receive(:call).with({service_uuid: uuid}).and_return(service_metadata)
+      allow(FetchNSDService).to receive(:call).with({service_uuid: uuid}).and_return(service_metadata)
       get '/'+uuid
       expect(last_response).to be_ok
       expect(last_response.body).to eq(service_metadata.to_json)

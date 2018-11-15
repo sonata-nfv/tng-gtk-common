@@ -33,30 +33,36 @@
 # encoding: utf-8
 require 'json'
 require 'net/http'
+require 'tng/gtk/utils/logger'
+require 'tng/gtk/utils/cache'
 
 class DeletePackagesService
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGING_CLASS=self.name
   
   # curl http://localhost:4011/catalogues/api/v2
   CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
   NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch packages'
   
   def self.call(package_uuid)
-    msg = self.name+'#'+__method__.to_s
     if CATALOGUE_URL == ''
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, NO_CATALOGUE_URL_DEFINED_ERROR]
+      LOGGER.error(component:LOGGING_CLASS, operation:'.call', message:NO_CATALOGUE_URL_DEFINED_ERROR)
       return nil 
     end
     
     begin
       uri = URI.parse(CATALOGUE_URL+'/packages/'+package_uuid)
-      STDERR.puts "#{msg}: querying uri=#{uri}"
+      LOGGER.debug(component:LOGGING_CLASS, operation:'.call', message:"querying uri=#{uri}")
       request = Net::HTTP::Delete.new(uri)
       request['content-type'] = 'application/json'
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
-      STDERR.puts "#{msg}: querying response=#{response}"
-      return 0 if response.is_a?(Net::HTTPSuccess)
+      LOGGER.debug(component:LOGGING_CLASS, operation:'.call', message:"querying response=#{response}")
+      if response.is_a?(Net::HTTPSuccess)
+        Tng::Gtk::Utils::Cache.clear package_uuid
+        return 0 
+      end
     rescue Exception => e
-      STDERR.puts "%s - %s: %s" % [Time.now.utc.to_s, msg, e.message]
+      LOGGER.error(component:LOGGING_CLASS, operation:'.call', message:e.message)
     end
     nil
   end
