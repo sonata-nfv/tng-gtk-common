@@ -30,23 +30,21 @@
 require 'sinatra/base'
 require 'sinatra/config_file'
 require 'sinatra/cross_origin'
-require 'logger'
+require 'tng/gtk/utils/logger'
 
 class ApplicationController < Sinatra::Base
-
-  LOGGER_LEVEL= ENV.fetch('LOGGER_LEVEL', 'info')
-  set :began_at, Time.now.utc
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGED_COMPONENT=self.name
+  @@began_at = Time.now.utc
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   register Sinatra::CrossOrigin
-  msg = self.name
+  enable :cross_origin
 
   set :bind, '0.0.0.0'
   set :began_at, Time.now.utc
   set :environment, ENV.fetch('RACK_ENV', :development)
-  enable :cross_origin
-  enable :logging
-  set :logger, Logger.new(STDERR)
-  set :logger_level, LOGGER_LEVEL.to_sym
   
   before { content_type :json}
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
 end

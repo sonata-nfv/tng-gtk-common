@@ -29,12 +29,15 @@
 # encoding: utf-8
 require 'sinatra'
 require 'json'
-require 'logger'
+require 'tng/gtk/utils/logger'
 
 class RootController < ApplicationController
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGED_COMPONENT=self.name
+  @@began_at = Time.now.utc
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
 
   OK_ROOT_ROUTE="This is the root route of the 5GTANGO Service Platform"
-  settings.logger.info(self.name) {"Started at #{Time.now.utc}"}
   
   get '/?' do
     content_type :text

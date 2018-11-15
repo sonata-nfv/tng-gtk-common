@@ -43,40 +43,45 @@ class ServicesController < ApplicationController
   LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   get '/?' do 
-    msg='.get (many)'
+    msg='#get (many)'
     began_at = Time.now.utc
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     result = FetchServicesService.call(symbolized_hash(params))
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
-    halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json if result.to_s.empty? # covers nil
+    if result.to_s.empty? # covers nil
+      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '404', time_elapsed:"#{Time.now.utc-began_at}")
+      halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json
+    end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '200', time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, {}, result.to_json
   end
   
   get '/:service_uuid/?' do 
-    msg='.get (single)'
+    msg='#get (single)'
     began_at = Time.now.utc
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params['service_uuid']='#{params['service_uuid']}'")
     result = FetchServicesService.call(symbolized_hash(params))
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
-    halt 404, {}, {error: ERROR_SERVICE_NOT_FOUND % params[:service_uuid]}.to_json if result.to_s.empty? # covers nil
+    if result.to_s.empty? # covers nil
+      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '404', time_elapsed:"#{Time.now.utc-began_at}")
+      halt 404, {}, {error: ERROR_SERVICE_NOT_FOUND % params[:service_uuid]}.to_json
+    end
+    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '200', time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, {}, result.to_json
   end
   
   options '/?' do
-    msg='.options'
+    msg='#options'
     began_at = Time.now.utc
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"called")
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET,DELETE'      
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
+    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", status: '200', time_elapsed:"#{Time.now.utc-began_at}")
     halt 200
   end
   
