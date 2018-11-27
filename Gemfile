@@ -42,9 +42,10 @@ gem 'sinatra-cross_origin', '0.4.0'
 gem 'faraday', '0.14.0'
 gem 'curb', '0.9.3'
 gem 'redis', '4.0.3'
-gem 'tng-gtk-utils', '0.2.3'
 gem 'puma', '3.11.0'
 gem 'pry', '0.12.2'
+
+gem 'tng-gtk-utils', '0.4.0'
 
 gem 'ci_reporter_rspec', '1.0.0'
 gem 'rubocop', '0.52.0'
