@@ -32,8 +32,9 @@ require 'json'
 require 'logger'
 require 'securerandom'
 require 'tng/gtk/utils/logger'
+require 'tng/gtk/utils/application_controller'
 
-class PackagesController < ApplicationController
+class PackagesController < Tng::Gtk::Utils::ApplicationController
 
   ERROR_PACKAGE_NOT_FOUND="No package with UUID '%s' was found"
   ERROR_PACKAGE_FILE_NOT_FOUND="No package file for package UUID '%s' was found"

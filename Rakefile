@@ -28,7 +28,11 @@
 # encoding: utf-8
 require 'rspec/core/rake_task'
 require 'ci/reporter/rake/rspec'
-require './gtk_pkg'
+require 'tng/gtk/utils/application_controller'
+%w{ controllers models services }.each do |dir|
+  path = File.expand_path(File.join(File.dirname(__FILE__), '../', dir))
+  $LOAD_PATH << path
+end
 
 task default: ['ci:all']
 
@@ -41,3 +45,28 @@ end
 #   rake ci:all
 desc 'Runs all test tasks'
 task 'ci:all' => ['ci:setup:rspec', 'specs']
+
+namespace :db do
+  task :load_config do
+    require './controllers/requests_controller'
+  end
+end
+
+# from https://opensoul.org/2012/05/30/releasing-multiple-gems-from-one-repository/
+#desc 'Build gem into the pkg directory'
+#task :build do
+#  FileUtils.rm_rf('pkg')
+#  Dir['*.gemspec'].each do |gemspec|
+#    system "gem build #{gemspec}"
+#  end
+#  FileUtils.mkdir_p('pkg')
+#  FileUtils.mv(Dir['*.gem'], 'pkg')
+#end
+
+#desc 'Tags version, pushes to remote, and pushes gem'
+#task :release => :build do
+#  sh 'git', 'tag', '-m', changelog, "v#{Qu::VERSION}"
+#  sh "git push origin master"
+#  sh "git push origin v#{Qu::VERSION}"
+#  sh "ls pkg/*.gem | xargs -n 1 gem push"
+#end
