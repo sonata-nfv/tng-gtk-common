@@ -31,8 +31,9 @@ require 'sinatra'
 require 'json'
 require 'logger'
 require 'tng/gtk/utils/logger'
+require 'tng/gtk/utils/application_controller'
 
-class PingsController < ApplicationController
+class PingsController < Tng::Gtk::Utils::ApplicationController
   LOGGER=Tng::Gtk::Utils::Logger
   LOGGED_COMPONENT=self.name
   @@began_at = Time.now.utc
