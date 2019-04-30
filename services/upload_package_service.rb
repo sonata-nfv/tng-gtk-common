@@ -73,7 +73,8 @@ class UploadPackageService
         Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', '')),
-        Curl::PostField.content('skip_store', params.fetch('skip_store', 'false'))
+        Curl::PostField.content('skip_store', params.fetch('skip_store', 'false')),
+        Curl::PostField.content('username', params.fetch('user_name', ''))
       )
         
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
@@ -84,7 +85,7 @@ class UploadPackageService
       LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       raise Error.new(ERROR_EXCEPTION_RAISED) 
     end
-    save_user_callback( result[:package_process_uuid], params['callback_url'])
+    save_user_callback( result[:package_process_uuid], params['callback_url']) if result.key? :package_process_uuid
     LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     result
   end
