@@ -108,8 +108,7 @@ class UploadPackageService
   
   def self.status(process_id)
     msg = '.'+__method__.to_s
-    # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
-    # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
+
     began_at = Time.now.utc
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"process_id=#{process_id}")
@@ -121,7 +120,6 @@ class UploadPackageService
     end
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result for #{process_id}=#{process[:result]}")
     unless process[:result].to_s.empty?
-      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"result for #{process_id}=#{process[:result]}")
       LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       return process[:result] 
     end
