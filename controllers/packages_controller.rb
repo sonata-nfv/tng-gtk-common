@@ -54,10 +54,7 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
   # Accept packages and pass them to the unpackager/validator component
   post '/?' do
     msg='#post'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     unless request.content_type =~ /^multipart\/form-data/
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_CONTENT_TYPE.to_json 
     end
     
@@ -65,143 +62,107 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
       ValidatePackageParametersService.call request.params
       body = UploadPackageService.call( request.params, request.content_type)
       LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"body=#{body}")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 200, {'content-type'=>'application/json'}, body.to_json
     rescue ArgumentError => e
       LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"error=#{e.message}")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 400, {'content-type'=>'application/json'}, {error: e.message}.to_json
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt code, {'content-type'=>'application/json'}, ERROR_PACKAGE_ACCEPTATION.to_json
   end
   
   # Callback for the tng-sdk-packager to notify the result of processing
   post '/on-change/?' do
     msg='#post (on-change)'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"request.content_type=#{request.content_type}")
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"request.base_url=#{request.base_url}")
     begin
       event_data = ValidateEventParametersService.call(request.body.read)
       result = UploadPackageService.process_callback(event_data, request.base_url)
       unless result == {}
-        LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
         halt 200, {}, result.to_json
       end
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Package processing UUID not found in event #{event_data}")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: "Package processing UUID not found in event #{event_data}"}.to_json
     rescue ArgumentError => e
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Perror=#{e.message}")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 400, {}, {error: e.message}.to_json
     end
   end
   
   get '/status/:process_uuid/?' do
     msg='#get (status)'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     unless uuid_valid?(params[:process_uuid])
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:ERROR_PROCESS_UUID_NOT_VALID % params[:process_uuid])
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 400, {}, {error: ERROR_PROCESS_UUID_NOT_VALID % params[:process_uuid]}.to_json 
     end
     result = UploadPackageService.status(params[:process_uuid])
     if result.to_s.empty? 
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:ERROR_NO_STATUS_FOUND % params[:process_uuid])
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: ERROR_NO_STATUS_FOUND % params[:process_uuid]}.to_json
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, {}, result.to_json
   end
 
   get '/?' do 
     msg='#get (many)'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     result = FetchPackagesService.metadata(symbolized_hash(params))
     if result.to_s.empty? # covers nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"No packages fiting the provided parameters ('#{params}') were found")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: "No packages fiting the provided parameters ('#{params}') were found"}.to_json 
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, {}, result.to_json
   end
   
   get '/:package_uuid/?' do 
     msg='#get (single)'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     result = FetchPackagesService.metadata(symbolized_hash(params))
     if result.to_s.empty? # covers nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:ERROR_PACKAGE_NOT_FOUND % params[:package_uuid])
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: ERROR_PACKAGE_NOT_FOUND % params[:package_uuid]}.to_json 
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, {}, result.to_json
   end
   
   get '/:package_uuid/package-file/?' do 
     msg='#get (package file)'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     body, headers = FetchPackagesService.package_file(symbolized_hash(params))
     if body.to_s.empty? # covers nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:ERROR_PACKAGE_NOT_FOUND % params[:package_uuid])
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json 
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, headers, body
   end
 
   get '/:package_uuid/files/:file_uuid?' do 
     msg='#get (package file by file uuid)'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     captures=params.delete('captures') if params.key? 'captures'
     body, headers = FetchPackagesService.file_by_uuid(symbolized_hash(params))
     if body.to_s.empty? # covers nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:ERROR_PACKAGE_NOT_FOUND % params[:package_uuid])
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json 
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 200, headers, body
   end
 
   delete '/:package_uuid/?' do 
     msg='#delete'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     #captures=params.delete('captures') if params.key? 'captures'
     result = DeletePackagesService.call(params[:package_uuid])
     if result.to_s.empty? # covers nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:ERROR_PACKAGE_NOT_FOUND % params[:package_uuid])
-      LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
       halt 404, {}, {error: ERROR_PACKAGE_FILE_NOT_FOUND % params[:package_uuid]}.to_json 
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 204, {}, {}
   end
   
   options '/?' do
     msg='#options'
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET,DELETE'      
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With'
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
     halt 200
   end
   
@@ -214,4 +175,5 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
   def symbolized_hash(hash)
     Hash[hash.map{|(k,v)| [k.to_sym,v]}]
   end
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-@@began_at}")
 end

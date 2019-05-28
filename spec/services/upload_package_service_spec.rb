@@ -63,12 +63,16 @@ RSpec.describe UploadPackageService do
   describe '.process_callback' do
     let(:event_data) { {event_name: "evt", package_id: "123", package_location: "xyz", package_process_uuid: "abc"}}
     let(:location_url) {'http://example.com'}
+    let(:recommender_url) {ENV.fetch('RECOMMENDER_URL', 'http://example.com/recommender')}
     before(:each) {
       WebMock.stub_request(:post, external_callback_url).
         with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
         to_return(status: 200, body: "", headers: {})
       WebMock.stub_request(:post, user_callback_url).
         with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
+        to_return(status: 200, body: "", headers: {})
+      WebMock.stub_request(:post, recommender_url+'/'+event_data[:package_id]).
+        with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
         to_return(status: 200, body: "", headers: {})
       allow(ENV).to receive(:[]).with("UNPACKAGER_URL").and_return(unpackager_url)
       allow(described_class).to receive(:save_result)

@@ -44,5 +44,5 @@ class PingsController < Tng::Gtk::Utils::ApplicationController
     LOGGER.info(component:LOGGED_COMPONENT, operation:msg, message:{ alive_since: @@began_at}.to_json, status: '200')
     halt 200, {}, { alive_since: @@began_at}.to_json
   end
-  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-began_at}")
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ended at #{Time.now.utc}", time_elapsed:"#{Time.now.utc-@@began_at}")
 end

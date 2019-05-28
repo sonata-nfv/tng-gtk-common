@@ -35,8 +35,13 @@ require 'securerandom'
 require 'tempfile'
 require 'fileutils'
 require 'curb'
+require 'tng/gtk/utils/logger'
 
 class UploadPackageService
+  @@began_at = Time.now.utc
+  LOGGER=Tng::Gtk::Utils::Logger
+  LOGGED_COMPONENT=self.name
+  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   class << self
     attr_accessor :internal_callbacks
@@ -51,13 +56,11 @@ class UploadPackageService
   LOGGER=Tng::Gtk::Utils::Logger
   LOGGED_COMPONENT=self.name
   LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:ERROR_UNPACKAGER_URL_NOT_PROVIDED) if UNPACKAGER_URL == ''
-  @@began_at = Time.now.utc
-  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
+  RECOMMENDER_URL = ENV.fetch('RECOMMENDER_URL', '')
   
   def self.call(params, content_type)
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
+    msg='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     
     tempfile = save_file params['package'][:tempfile]
     curl = Curl::Easy.new(UNPACKAGER_URL)
@@ -82,50 +85,40 @@ class UploadPackageService
       LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{result}")
     rescue Exception => e
       LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"#{e.message}: #{e.backtrace.inspect}")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       raise Error.new(ERROR_EXCEPTION_RAISED) 
     end
     save_user_callback( result[:package_process_uuid], params['callback_url']) if result.key? :package_process_uuid
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     result
   end
   
   def self.process_callback(params, url)
-    # example: https://gist.github.com/mpeuster/4a302c2667dfa1ed428b3c993534841d
-    #"package_id":"471504c1-5a05-41e6-b652-b5d6af7db8ec",
-    #"package_location":"http://127.0.0.1:4011/catalogues/api/v2/packages/471504c1-5a05-41e6-b652-b5d6af7db8ec",
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
+    msg='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     params[:package_location] = "#{url}/api/v3/packages/#{params[:package_id]}"
     result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"RECOMMENDER_URL=#{RECOMMENDER_URL}\tuser_name_not_present?(#{params})=#{user_name_not_present?(params)})")
+    notify_recommender(params) unless (RECOMMENDER_URL.empty? || user_name_not_present?(params))
     notify_user(params)
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{result}")
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+    
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     result
   end
   
   def self.status(process_id)
     msg = '.'+__method__.to_s
 
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:msg, start_stop: 'START', message:"Started at #{began_at}")
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"process_id=#{process_id}")
     process = db_get(process_id)
     if process == nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"process is nil")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       return {} 
     end
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result for #{process_id}=#{process[:result]}")
     unless process[:result].to_s.empty?
-      LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       return process[:result] 
     end
-    status = FetchPackagesService.status(process_id)
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
-    status
+    FetchPackagesService.status(process_id)
   end
   
   private
@@ -144,6 +137,24 @@ class UploadPackageService
     process
   end
   
+  def self.notify_recommender(params)
+    msg='.'+__method__.to_s
+    begin
+      curl = Curl::Easy.http_post( RECOMMENDER_URL+'/'+params[:package_id], '') do |request|
+        request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
+      end
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
+    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
+      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Failled to post to recommender #{RECOMMENDER_URL+'/'+params[:package_id]}")
+    end
+  end
+
+  def self.user_name_not_present?(params)
+    msg='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
+    !params.key?(:user_name) || params[:user_name].empty?
+  end
+    
   def self.notify_external_systems(params)
     begin
       curl = Curl::Easy.http_post( EXTERNAL_CALLBACK_URL, params.to_json) do |request|
