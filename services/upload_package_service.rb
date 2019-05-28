@@ -149,6 +149,8 @@ class UploadPackageService
   end
 
   def self.user_name_not_present?(params)
+    msg='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     !params.key?(:user_name) || params[:user_name].empty?
   end
     
