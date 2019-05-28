@@ -97,6 +97,7 @@ class UploadPackageService
     params[:package_location] = "#{url}/api/v3/packages/#{params[:package_id]}"
     result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"RECOMMENDER_URL=#{RECOMMENDER_URL}\tuser_name_not_present?(#{params})=#{user_name_not_present?(params)})")
     notify_recommender(params) unless (RECOMMENDER_URL.empty? || user_name_not_present?(params))
     notify_user(params)
     
