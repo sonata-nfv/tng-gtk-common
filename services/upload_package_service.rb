@@ -97,7 +97,7 @@ class UploadPackageService
     params[:package_location] = "#{url}/api/v3/packages/#{params[:package_id]}"
     result = save_result(params)
     notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
-    notify_recommender(params) unless RECOMMENDER_URL == ''
+    notify_recommender(params) unless (RECOMMENDER_URL.empty? || user_name_not_present?(params))
     notify_user(params)
     
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
@@ -147,7 +147,11 @@ class UploadPackageService
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Failled to post to recommender #{RECOMMENDER_URL+'/'+params[:package_id]}")
     end
   end
-  
+
+  def self.user_name_not_present?(params)
+    !params.key?(:user_name) || params[:user_name].empty?
+  end
+    
   def self.notify_external_systems(params)
     begin
       curl = Curl::Easy.http_post( EXTERNAL_CALLBACK_URL, params.to_json) do |request|
