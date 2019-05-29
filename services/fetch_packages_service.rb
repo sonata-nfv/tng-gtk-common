@@ -133,7 +133,7 @@ class FetchPackagesService
 
   def self.file_by_uuid(params)
     operation='.'+__method__.to_s
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:, message:"params=#{params}")
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"params=#{params}")
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
       LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"package_metadata=#{package_metadata}")
