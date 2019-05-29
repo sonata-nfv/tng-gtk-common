@@ -37,14 +37,14 @@ require 'tng/gtk/utils/logger'
 require 'tng/gtk/utils/fetch'
 
 class FetchVNFDsService < Tng::Gtk::Utils::Fetch
-  NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch functions'
+  #NO_CATALOGUE_URL_DEFINED_ERROR='The CATALOGUE_URL ENV variable needs to defined and pointing to the Catalogue where to fetch functions'
   LOGGER=Tng::Gtk::Utils::Logger
   
-  CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
-  if CATALOGUE_URL == ''
-    LOGGER.error(component:'FetchVNFDsService', operation:'fetching CATALOGUE_URL ENV variable', message:NO_CATALOGUE_URL_DEFINED_ERROR)
-    raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
-  end
+  #CATALOGUE_URL = ENV.fetch('CATALOGUE_URL', '')
+  #if CATALOGUE_URL == ''
+  #  LOGGER.error(component:'FetchVNFDsService', operation:'fetching CATALOGUE_URL ENV variable', message:NO_CATALOGUE_URL_DEFINED_ERROR)
+  #  raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
+  #end
   self.site=CATALOGUE_URL+'/vnfs'
   LOGGER.info(component:'FetchVNFDsService', operation:'site definition', message:"self.site=#{self.site}")
 end
