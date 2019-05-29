@@ -47,8 +47,8 @@ class UploadPackageService
     attr_accessor :internal_callbacks
   end
   
-  INTERNAL_CALLBACK_URL = ENV.fetch('INTERNAL_CALLBACK_URL', 'http://tng-gtk-common:5000/packages/on-change')
-  EXTERNAL_CALLBACK_URL = ENV.fetch('EXTERNAL_CALLBACK_URL', '')
+  UPLOADED_CALLBACK_URL = ENV.fetch('UPLOADED_CALLBACK_URL', 'http://tng-gtk-common:5000/packages/on-change')
+  NEW_PACKAGE_CALLBACK_URL = ENV.fetch('NEW_PACKAGE_CALLBACK_URL', '')
   UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
   ERROR_UNPACKAGER_URL_NOT_PROVIDED='You must provide the un-packager URL as the UNPACKAGER_URL environment variable'
   ERROR_EXCEPTION_RAISED='Exception raised while posting package or parsing answer'
@@ -71,7 +71,7 @@ class UploadPackageService
       filename = package.fetch(:filename, '')
       curl.http_post(
         Curl::PostField.file('package', tempfile.path, filename),
-        Curl::PostField.content('callback_url', INTERNAL_CALLBACK_URL),
+        Curl::PostField.content('callback_url', UPLOADED_CALLBACK_URL),
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', '')),
         Curl::PostField.content('skip_store', params.fetch('skip_store', 'false')),
@@ -94,7 +94,7 @@ class UploadPackageService
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     params[:package_location] = "#{url}/api/v3/packages/#{params[:package_id]}"
     result = save_result(params)
-    notify_external_systems(params) unless EXTERNAL_CALLBACK_URL == ''
+    notify_external_systems(params) unless NEW_PACKAGE_CALLBACK_URL == ''
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"RECOMMENDER_URL=#{RECOMMENDER_URL}\tuser_name_not_present?(#{params})=#{user_name_not_present?(params)})")
     notify_recommender(params) unless (RECOMMENDER_URL.empty? || user_name_not_present?(params))
     notify_user(params)
@@ -155,12 +155,12 @@ class UploadPackageService
     
   def self.notify_external_systems(params)
     begin
-      curl = Curl::Easy.http_post( EXTERNAL_CALLBACK_URL, params.to_json) do |request|
+      curl = Curl::Easy.http_post( NEW_PACKAGE_CALLBACK_URL, params.to_json) do |request|
         request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
       end
       LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to external callback #{EXTERNAL_CALLBACK_URL}")
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to external callback #{NEW_PACKAGE_CALLBACK_URL}")
     end
   end
   
