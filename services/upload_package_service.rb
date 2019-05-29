@@ -53,8 +53,6 @@ class UploadPackageService
   ERROR_UNPACKAGER_URL_NOT_PROVIDED='You must provide the un-packager URL as the UNPACKAGER_URL environment variable'
   ERROR_EXCEPTION_RAISED='Exception raised while posting package or parsing answer'
   @@internal_callbacks = {}
-  LOGGER=Tng::Gtk::Utils::Logger
-  LOGGED_COMPONENT=self.name
   LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:ERROR_UNPACKAGER_URL_NOT_PROVIDED) if UNPACKAGER_URL == ''
   RECOMMENDER_URL = ENV.fetch('RECOMMENDER_URL', '')
   

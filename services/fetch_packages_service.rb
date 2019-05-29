@@ -61,7 +61,6 @@ class FetchPackagesService
     # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
     # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
     began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
     begin
       uri = URI.parse(UNPACKAGER_URL+'/status/'+process_id)
       request = Net::HTTP::Get.new(uri)
@@ -71,19 +70,17 @@ class FetchPackagesService
     rescue Exception => e
       LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     nil
   end
 
   def self.metadata(params)
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
+    operation='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"params=#{params}")
     begin
       if params.key?(:package_uuid)
         package_uuid = params.delete :package_uuid
         uri = URI.parse(CATALOGUE_URL+'/packages/'+package_uuid)
-        # mind that there ccany be more params, so we might need to pass params as well
+        # mind that there can be more params, so we might need to pass params as well
       else
         uri = URI.parse(CATALOGUE_URL+'/packages')
         uri.query = URI.encode_www_form(sanitize(params))
@@ -93,95 +90,80 @@ class FetchPackagesService
       response = Net::HTTP.start(uri.hostname, uri.port) {|http| http.request(request)}
       return JSON.parse(response.read_body, quirks_mode: true, symbolize_names: true) if response.is_a?(Net::HTTPSuccess)
     rescue Exception => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
+      LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:e.message)
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     nil
   end
     
   def self.package_file(params)
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
+    operation='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"params=#{params}")
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
       if package_metadata.to_s.empty?
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package metadata for params #{params} is empty")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package metadata for params #{params} is empty")
         return [nil, nil] 
       end
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_metadata=#{package_metadata}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"package_metadata=#{package_metadata}")
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package descriptor not set for package '#{params[:package_uuid]}'")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package descriptor not set for package '#{params[:package_uuid]}'")
         return [nil, nil]
       end
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"pd=#{pd}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"pd=#{pd}")
       package_file_uuid = pd.fetch(:package_file_uuid, '')
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_file_uuid=#{package_file_uuid}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"package_file_uuid=#{package_file_uuid}")
       if package_file_uuid == ''
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package file UUID not set for package '#{params[:package_uuid]}'")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package file UUID not set for package '#{params[:package_uuid]}'")
         return [nil, nil]
       end
       package_file_name = pd.fetch(:package_file_name, '')
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_file_name=#{package_file_name}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"package_file_name=#{package_file_name}")
       if package_file_name == ''
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package file name not set for package '#{params[:package_uuid]}'")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package file name not set for package '#{params[:package_uuid]}'")
         return [nil, nil]
       end
       body, headers = download_file(CATALOGUE_URL+'/tgo-packages/'+package_file_uuid, package_file_name, 'application/zip')
-      LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
       return [body, headers]
     rescue Exception => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
+      LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:e.message)
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     [nil, nil]
   end
 
   def self.file_by_uuid(params)
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
+    operation='.'+__method__.to_s
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:, message:"params=#{params}")
     begin
       package_metadata = metadata(package_uuid: params[:package_uuid])
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"package_metadata=#{package_metadata}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"package_metadata=#{package_metadata}")
       if package_metadata.to_s.empty?
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package metadata for params #{params} is empty")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package metadata for params #{params} is empty")
         return [nil, nil] 
       end
       pd = package_metadata.fetch(:pd, {})
       if pd == {}
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package descriptor not set for package '#{params[:package_uuid]}'")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package descriptor not set for package '#{params[:package_uuid]}'")
         return [nil, nil]
       end
       package_content = pd.fetch(:package_content, [])
       if package_content == []
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package package content not set for package '#{params[:package_uuid]}'")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package package content not set for package '#{params[:package_uuid]}'")
         return [nil, nil]
       end
       found_file = package_content.detect {|file| file[:uuid] == params[:file_uuid] }
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"found_file=#{found_file}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"found_file=#{found_file}")
       if found_file.to_s.empty?
-        LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'")
-        LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+        LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:"Package file UUID '#{params[:file_uuid]}' not found for package '#{params[:package_uuid]}'")
         return [nil, nil]
       end
       file_name = found_file[:source].split('/').last
       body, headers = download_file(CATALOGUE_URL+'/files/'+found_file[:uuid], file_name, 'application/octet-stream') 
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"body size #{body.bytesize}, headers  #{headers}")
-      LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"body size #{body.bytesize}, headers  #{headers}")
       return [body, headers]
     rescue Exception => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:e.message)
+      LOGGER.error(component:LOGGED_COMPONENT, operation:operation, message:e.message)
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - began_at)
     [nil, nil]
   end
   
@@ -198,8 +180,7 @@ class FetchPackagesService
   
   def self.download_file(file_url, file_name, content_type)
     #curl -H "Content-Type:application/zip" http://localhost:4011/api/catalogues/v2/tgo-packages/{id}
-    began_at = Time.now.utc
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'START', message:"Started at #{began_at}")
+    operation='.'+__method__.to_s
     body = ''
     headers ={}
     uri = URI.parse(file_url)
@@ -211,23 +192,21 @@ class FetchPackagesService
       request['content-disposition'] = 'attachment; filename='+file_name
 
       http.request request do |response|
-        LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response.inspect}")
+        LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"response = #{response.inspect}")
         case response
           when Net::HTTPSuccess
             body = response.read_body
             headers = response.to_hash
-            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"body size #{body.bytesize}, headers  #{headers}")
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"body size #{body.bytesize}, headers  #{headers}")
           when Net::HTTPUnauthorized
-            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response}")
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"response = #{response}")
           when Net::HTTPServerError
-            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response}")
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"response = #{response}")
           else
-            LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"response = #{response}")
+            LOGGER.debug(component:LOGGED_COMPONENT, operation:operation, message:"response = #{response}")
         end
       end
     end
-    LOGGER.info(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - @@began_at)
     [body, headers]
   end
-  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'STOP', message:"Ending at #{Time.now.utc}", time_elapsed: Time.now.utc - @@began_at)
 end
