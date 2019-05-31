@@ -57,10 +57,11 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
     unless request.content_type =~ /^multipart\/form-data/
       halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_CONTENT_TYPE.to_json 
     end
+    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"request.env=#{request.env}")
     
     begin
       ValidatePackageParametersService.call request.params
-      body = UploadPackageService.call( request.params, request.content_type)
+      body = UploadPackageService.call( request.params, request.env.fetch('X_USER_NAME', ''))
       LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"body=#{body}")
       halt 200, {'content-type'=>'application/json'}, body.to_json
     rescue ArgumentError => e
@@ -84,7 +85,7 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Package processing UUID not found in event #{event_data}")
       halt 404, {}, {error: "Package processing UUID not found in event #{event_data}"}.to_json
     rescue ArgumentError => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Perror=#{e.message}")
+      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"error=#{e.message}")
       halt 400, {}, {error: e.message}.to_json
     end
   end

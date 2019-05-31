@@ -65,30 +65,20 @@ RSpec.describe UploadPackageService do
     let(:location_url) {'http://example.com'}
     let(:recommender_url) {ENV.fetch('RECOMMENDER_URL', 'http://example.com/recommender')}
     before(:each) {
-      WebMock.stub_request(:post, external_callback_url).
-        with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
-        to_return(status: 200, body: "", headers: {})
-      WebMock.stub_request(:post, user_callback_url).
-        with(body: event_data.to_json, headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
-        to_return(status: 200, body: "", headers: {})
-      WebMock.stub_request(:post, recommender_url+'/'+event_data[:package_id]).
-        with(headers: {'Accept'=>'application/json', 'Content-Type'=>'application/json'}).
-        to_return(status: 200, body: "", headers: {})
       allow(ENV).to receive(:[]).with("UNPACKAGER_URL").and_return(unpackager_url)
       allow(described_class).to receive(:save_result)
-      allow(described_class).to receive(:notify_external_systems)
-      allow(described_class).to receive(:notify_user)
+      allow(described_class).to receive(:notify_callbacks)
     }
     it 'calls the external callback' do
-      described_class.class_variable_set :@@internal_callbacks, {abc: { user_callback: user_callback_url, result: event_data}}
+      described_class.class_variable_set :@@internal_callbacks, {abc: { callbacks: {user: user_callback_url}, result: event_data}}
       expect{described_class.process_callback(event_data, location_url)}.not_to raise_error
     end
     it 'calls the user callback (if exists)' do
-      described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
+      described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { callbacks: {user: user_callback_url}, result: event_data}}
       expect{described_class.process_callback(event_data, location_url)}.not_to raise_error
     end
     it 'does not call the user callback when it does not exist' do
-      described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { user_callback: user_callback_url, result: event_data}}
+      described_class.class_variable_set :@@internal_callbacks, {'abc'.to_sym => { callbacks: {user: user_callback_url}, result: event_data}}
       expect{described_class.process_callback(event_data, location_url)}.not_to raise_error
     end
   end
