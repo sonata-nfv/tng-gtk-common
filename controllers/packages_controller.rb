@@ -107,6 +107,7 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
   get '/?' do 
     msg='#get (many)'
     captures=params.delete('captures') if params.key? 'captures'
+    STDERR.puts ">>>>#{LOGGED_COMPONENT}#{msg}:request.env['HTTP_X_USER_NAME']='#{request.env['HTTP_X_USER_NAME']}'"
     result = FetchPackagesService.metadata(symbolized_hash(params))
     if result.to_s.empty? # covers nil
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"No packages fiting the provided parameters ('#{params}') were found")
