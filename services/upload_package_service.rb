@@ -81,8 +81,8 @@ class UploadPackageService
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
       LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     rescue Exception => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"#{e.message}: #{e.backtrace.inspect}")
-      raise 'Exception raised while posting package or parsing answer'
+      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"#{e.message}: #{e.backtrace.join("\n\t")}")
+      raise "Exception raised while posting package or parsing answer: #{e.message}: #{e.backtrace.join("\n\t")}"
     end
     callbacks = {}
     callbacks[:client] = params['callback_url'] if params.key?('callback_url')
