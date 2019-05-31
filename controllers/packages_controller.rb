@@ -60,7 +60,7 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
     
     begin
       ValidatePackageParametersService.call request.params
-      body = UploadPackageService.call( request.params, request.content_type)
+      body = UploadPackageService.call( request.params, request.env['X_USER_NAME'])
       LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"body=#{body}")
       halt 200, {'content-type'=>'application/json'}, body.to_json
     rescue ArgumentError => e

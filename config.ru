@@ -30,6 +30,7 @@
 ## acknowledge the contributions of their colleagues of the 5GTANGO
 ## partner consortium (www.5gtango.eu).
 # encoding: utf-8
+#require 'newrelic_rpm'
 require 'sinatra/base'
 require 'tng/gtk/utils/functions'
 require 'tng/gtk/utils/services'
@@ -39,7 +40,7 @@ require './controllers/pings_controller.rb'
 require './controllers/root_controller.rb'
 Dir.glob('./services/*.rb').each { |file| require file }
 map('/packages') { run PackagesController }
-map('/services') { run ServicesController } #Tng::Gtk::Utils::
-map('/functions') { run FunctionsController } #Tng::Gtk::Utils::
+map('/services') { run ServicesController }
+map('/functions') { run FunctionsController }
 map('/pings') { run PingsController }
 map('/') { run RootController }

@@ -56,7 +56,7 @@ class UploadPackageService
   LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:ERROR_UNPACKAGER_URL_NOT_PROVIDED) if UNPACKAGER_URL == ''
   RECOMMENDER_URL = ENV.fetch('RECOMMENDER_URL', '')
   
-  def self.call(params, content_type)
+  def self.call(params, user_name)
     msg='.'+__method__.to_s
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     
@@ -75,17 +75,21 @@ class UploadPackageService
         Curl::PostField.content('layer', params.fetch('layer', '')),
         Curl::PostField.content('format', params.fetch('format', '')),
         Curl::PostField.content('skip_store', params.fetch('skip_store', 'false')),
-        Curl::PostField.content('username', params.fetch('user_name', ''))
+        Curl::PostField.content('username', user_name)
       )
         
       # { "package_process_uuid": "03921bbe-8d9f-4cfc-b6ab-88b58cb8db7e", "status": status, "error_msg": p.error_msg}
       result = JSON.parse(curl.body_str, quirks_mode: true, symbolize_names: true)
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{result}")
+      LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     rescue Exception => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"#{e.message}: #{e.backtrace.inspect}")
+      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"#{e.message}: #{e.backtrace.inspect}")
       raise Error.new(ERROR_EXCEPTION_RAISED) 
     end
-    save_user_callback( result[:package_process_uuid], params['callback_url']) if result.key? :package_process_uuid
+    callbacks = {}
+    callbacks[:client] = params['callback_url'] if params.key?('callback_url')
+    callbacks[:recommender] = RECOMMENDER_URL unless RECOMMENDER_URL == ''
+    callbacks[:planner] = NEW_PACKAGE_CALLBACK_URL unless NEW_PACKAGE_CALLBACK_URL == ''
+    save_callbacks( result[:package_process_uuid], callbacks) if result.key? :package_process_uuid
     result
   end
   
@@ -94,11 +98,7 @@ class UploadPackageService
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
     params[:package_location] = "#{url}/api/v3/packages/#{params[:package_id]}"
     result = save_result(params)
-    notify_external_systems(params) unless NEW_PACKAGE_CALLBACK_URL == ''
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"RECOMMENDER_URL=#{RECOMMENDER_URL}\tuser_name_not_present?(#{params})=#{user_name_not_present?(params)})")
-    notify_recommender(params) unless (RECOMMENDER_URL.empty? || user_name_not_present?(params))
-    notify_user(params)
-    
+    notify_callbacks(params)
     LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     result
   end
@@ -135,47 +135,21 @@ class UploadPackageService
     process
   end
   
-  def self.notify_recommender(params)
-    msg='.'+__method__.to_s
-    begin
-      curl = Curl::Easy.http_post( RECOMMENDER_URL+'/'+params[:package_id], '') do |request|
-        request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
-      end
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
-    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"Failled to post to recommender #{RECOMMENDER_URL+'/'+params[:package_id]}")
-    end
-  end
-
-  def self.user_name_not_present?(params)
-    msg='.'+__method__.to_s
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"params=#{params}")
-    !params.key?(:user_name) || params[:user_name].empty?
-  end
-    
-  def self.notify_external_systems(params)
-    begin
-      curl = Curl::Easy.http_post( NEW_PACKAGE_CALLBACK_URL, params.to_json) do |request|
-        request.headers['Accept'] = request.headers['Content-Type'] = 'application/json'
-      end
-      LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"params=#{params}")
-    rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::CurlError, Curl::Err::AccessDeniedError, Curl::Err::TimeoutError, Curl::Err::TimeoutError => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to external callback #{NEW_PACKAGE_CALLBACK_URL}")
-    end
-  end
-  
-  def self.notify_user(params)
+  def self.notify_callbacks(params)
     process = db_get(params[:package_process_uuid])
     return if process == nil
-    user_callback = process[:user_callback]
-    LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"user_callback=#{user_callback}")
-    return if user_callback.to_s.empty?
     begin
-      resp = Curl::Easy.http_post( user_callback, params.to_json) do |http|
-        http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'
+      if (process[:callbacks].key?(:user) && process[:callbacks][:user] != '')
+        Curl::Easy.http_post( process[:callbacks][:user], params.to_json) { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
+      end
+      if (process[:callbacks].key?(:planner) && process[:callbacks][:planner] != '')
+        Curl::Easy.http_post( process[:callbacks][:planner], params.to_json) { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
+      end
+      if (process[:callbacks].key?(:recommender) && process[:callbacks][:recommender] != '')
+        Curl::Easy.http_post( process[:callbacks][:recommender]+'/'+params[:package_id], '') { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
       end
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
-      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to user's callback #{user_callback}")
+      LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to one of the callbacks #{process[:callbacks]}")
     end
   end
 
@@ -188,8 +162,8 @@ class UploadPackageService
     tempfile
   end
   
-  def self.save_user_callback(uuid, user_callback)
-    db_set(uuid, { user_callback: user_callback, result: nil})
+  def self.save_callbacks(uuid, callbacks)
+    db_set(uuid, { callbacks: callbacks, result: nil})
   end
   
   def self.random_string
