@@ -51,7 +51,6 @@ class UploadPackageService
   NEW_PACKAGE_CALLBACK_URL = ENV.fetch('NEW_PACKAGE_CALLBACK_URL', '')
   UNPACKAGER_URL= ENV.fetch('UNPACKAGER_URL', '')
   ERROR_UNPACKAGER_URL_NOT_PROVIDED='You must provide the un-packager URL as the UNPACKAGER_URL environment variable'
-  ERROR_EXCEPTION_RAISED='Exception raised while posting package or parsing answer'
   @@internal_callbacks = {}
   LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:ERROR_UNPACKAGER_URL_NOT_PROVIDED) if UNPACKAGER_URL == ''
   RECOMMENDER_URL = ENV.fetch('RECOMMENDER_URL', '')
@@ -83,7 +82,7 @@ class UploadPackageService
       LOGGER.debug(component:LOGGED_COMPONENT, operation:msg, message:"result=#{result}")
     rescue Exception => e
       LOGGER.error(component:LOGGED_COMPONENT, operation:msg, message:"#{e.message}: #{e.backtrace.inspect}")
-      raise Error.new(ERROR_EXCEPTION_RAISED) 
+      raise 'Exception raised while posting package or parsing answer'
     end
     callbacks = {}
     callbacks[:client] = params['callback_url'] if params.key?('callback_url')
