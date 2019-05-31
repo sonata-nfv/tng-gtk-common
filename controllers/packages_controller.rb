@@ -57,7 +57,7 @@ class PackagesController < Tng::Gtk::Utils::ApplicationController
     unless request.content_type =~ /^multipart\/form-data/
       halt 400, {'content-type'=>'application/json'}, ERROR_PACKAGE_CONTENT_TYPE.to_json 
     end
-    STDERR.puts ">>>>#{LOGGED_COMPONENT}#{msg}:request.env=#{request.env}"
+    STDERR.puts ">>>>#{LOGGED_COMPONENT}#{msg}:request.env['HTTP_X_USER_NAME']='#{request.env['HTTP_X_USER_NAME']}'"
     
     begin
       ValidatePackageParametersService.call request.params
