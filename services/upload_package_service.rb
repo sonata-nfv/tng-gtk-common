@@ -145,7 +145,7 @@ class UploadPackageService
         Curl::Easy.http_post( process[:callbacks][:planner], params.to_json) { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
       end
       if (process[:callbacks].key?(:recommender) && process[:callbacks][:recommender] != '' && params.key?(:package_id) && params[:package_id] != '')
-        Curl::Easy.http_post( "#{process[:callbacks][:recommender]/params[:package_id]}", '') { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
+        Curl::Easy.http_post( process[:callbacks][:recommender]+'/'+params[:package_id], '') { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
       end
     rescue Curl::Err::TimeoutError, Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
       LOGGER.error(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"Failled to post to one of the callbacks #{process[:callbacks]}")
