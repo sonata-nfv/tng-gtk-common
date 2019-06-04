@@ -141,7 +141,7 @@ class UploadPackageService
       if (process[:callbacks].key?(:user) && process[:callbacks][:user] != '')
         Curl::Easy.http_post( process[:callbacks][:user], params.to_json) { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
       end
-      if (process[:callbacks].key?(:planner) && process[:callbacks][:planner] != '')
+      if (process[:callbacks].key?(:planner) && process[:callbacks][:planner] != '' && params[:package_id] && params[:package_id] != '')
         Curl::Easy.http_post( process[:callbacks][:planner], params.to_json) { |http| http.headers['Accept'] = http.headers['Content-Type'] = 'application/json'}
       end
       if (process[:callbacks].key?(:recommender) && process[:callbacks][:recommender] != '' && params[:package_id] && params[:package_id] != '')
