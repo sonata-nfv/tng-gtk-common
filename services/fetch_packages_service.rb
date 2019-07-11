@@ -46,7 +46,6 @@ class FetchPackagesService
   NO_UNPACKAGER_URL_DEFINED_ERROR='The UNPACKAGER_URL ENV variable needs to defined and pointing to the Packager component URL'
   LOGGER=Tng::Gtk::Utils::Logger
   LOGGED_COMPONENT=self.name
-  @@began_at = Time.now.utc
   if CATALOGUE_URL == ''
     LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:NO_CATALOGUE_URL_DEFINED_ERROR)
     raise ArgumentError.new(NO_CATALOGUE_URL_DEFINED_ERROR) 
@@ -55,12 +54,10 @@ class FetchPackagesService
     LOGGER.error(component:LOGGED_COMPONENT, operation:'initializing', message:NO_UNPACKAGER_URL_DEFINED_ERROR)
     raise ArgumentError.new(NO_UNPACKAGER_URL_DEFINED_ERROR) 
   end
-  LOGGER.info(component:LOGGED_COMPONENT, operation:'initializing', start_stop: 'START', message:"Started at #{@@began_at}")
   
   def self.status(process_id)
     # should be {"event_name": "onPackageChangeEvent", "package_id": "string", "package_location": "string", 
     # "package_metadata": "string", "package_process_status": "string", "package_process_uuid": "string"}
-    began_at = Time.now.utc
     begin
       uri = URI.parse(UNPACKAGER_URL+'/status/'+process_id)
       request = Net::HTTP::Get.new(uri)
