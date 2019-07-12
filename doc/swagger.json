@@ -205,6 +205,27 @@
             "200": { "description": "OK"},
             "400": {"description": "Bad Request"}
           }
+        },
+        "delete": {
+          "tags": ["package management"],
+          "summary": "Delete a specific package (meta-data and files)",
+          "parameters": [
+            {
+              "name": "package_uuid",
+              "in": "path",
+              "description": "UUID of the package to be deleted",
+              "required": true,
+              "type": "string",
+              "format": "uuid"
+            }
+          ],
+          "consumes": ["*/*"],
+          "produces": ["application/json"],
+          "responses": {
+            "204": { "description": "No Content"},
+            "400": { "description": "Bad request"},
+            "404": { "description": "Not found"}
+          }
         }
       },
     "/packages/on-change": {
@@ -230,53 +251,6 @@
               },
               "400": { "description": "Bad Request", "schema": {} }
           }
-      }
-    },
-    "/packages/{package_uuid}": {
-      "get": {
-        "tags": ["package management"],
-        "summary": "Query a specific package meta-data",
-        "parameters": [
-          {
-            "name": "package_uuid",
-            "in": "path",
-            "description": "UUID of the package which meta-data is required",
-            "required": true,
-            "type": "string",
-            "format": "uuid"
-          }
-        ],
-        "consumes": ["*/*"],
-        "produces": ["application/json"],
-        "responses": {
-          "200": { 
-            "description": "OK",
-            "schema":{ "$ref":"#/definitions/PackagesGetMetadataReturn"}
-          },
-          "400": { "description": "Bad request"},
-          "404": { "description": "Not found"}
-        }
-      },
-      "delete": {
-        "tags": ["package management"],
-        "summary": "Delete a specific package (meta-data and files)",
-        "parameters": [
-          {
-            "name": "package_uuid",
-            "in": "path",
-            "description": "UUID of the package to be deleted",
-            "required": true,
-            "type": "string",
-            "format": "uuid"
-          }
-        ],
-        "consumes": ["*/*"],
-        "produces": ["application/json"],
-        "responses": {
-          "204": { "description": "No Content"},
-          "400": { "description": "Bad request"},
-          "404": { "description": "Not found"}
-        }
       }
     },
     "/packages/{package_uuid}/package-file": {
