@@ -123,7 +123,7 @@ class UploadPackageService
     @@internal_callbacks[key.is_a?(Symbol) ? key : key.to_sym]
   end
   def self.db_set(key, value)
-    now = Time.now.utc #.strftime("%Y-%m-%e %H:%M:%S.%6N %Z" )
+    now = Time.now.utc.strftime("%Y-%m-%e %H:%M:%S.%6N %Z" )
     @@internal_callbacks[key.is_a?(Symbol) ? key : key.to_sym] = value.merge!({created_at: now, updated_at: now})
   end
   
@@ -131,7 +131,7 @@ class UploadPackageService
     process = db_get result[:package_process_uuid]
     return {} if process == nil
     process[:result]= result
-    process[:updated_at]= Time.now.utc #.strftime("%Y-%m-%e %H:%M:%S.%6N %Z" )
+    process[:updated_at]= Time.now.utc.strftime("%Y-%m-%e %H:%M:%S.%6N %Z" )
     LOGGER.debug(component:LOGGED_COMPONENT, operation:'.'+__method__.to_s, message:"result=#{process[:result]}")
     process
   end
