@@ -9,6 +9,17 @@ Please see [details on the overall 5GTANGO architecture here](https://5gtango.eu
 
 <p align="center"><img src="https://github.com/sonata-nfv/tng-api-gtw/wiki/images/GKs_place_in_5GTANGO_architecture.png" /></p>
 
+## Supported endpoints
+Supported endpoints, alphabetically sorted, are described next. These endpoints are internal, only the ones exposed by the [router](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router in the ([Service Platform's](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router/config/sp_routes.yml) and [V&V Platform's](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router/config/vnv_routes.yml)) files.
+
+**Endpoints**|**Description**
+:----|:----
+`/`|The root of the API.
+`/functions`|[Lists available functions (VNFs) in the Catalogue](https://github.com/sonata-nfv/tng-gtk-common/wiki/functions-querying)
+`/packages`|[Manages packages](https://github.com/sonata-nfv/tng-api-gtw/wiki/packages-management) (uploading, downloading, etc.)
+`/pings`|[The Gatekeeper's `readiness` and `liveness` endpoint](https://github.com/sonata-nfv/tng-api-gtw/wiki/readiness-liveliness-probe)
+`/services`|[Lists available services (NSs) in the Catalogue](https://github.com/sonata-nfv/tng-gtk-common/wiki/services-querying)
+
 ## Installing / Getting started
 
 This component is implemented in [ruby](https://www.ruby-lang.org/en/), version **2.4.3**. 
