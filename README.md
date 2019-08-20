@@ -10,7 +10,7 @@ Please see [details on the overall 5GTANGO architecture here](https://5gtango.eu
 <p align="center"><img src="https://github.com/sonata-nfv/tng-api-gtw/wiki/images/GKs_place_in_5GTANGO_architecture.png" /></p>
 
 ## Supported endpoints
-Supported endpoints, alphabetically sorted, are described next. These endpoints are internal, only the ones exposed by the [router](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router in the ([Service Platform's](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router/config/sp_routes.yml) and [V&V Platform's](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router/config/vnv_routes.yml)) files.
+Supported endpoints, alphabetically sorted, are described next. These endpoints are internal, only the ones exposed by the [router](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router) in the ([Service Platform's](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router/config/sp_routes.yml) and [V&V Platform's](https://github.com/sonata-nfv/tng-api-gtw/blob/master/tng-router/config/vnv_routes.yml)) files.
 
 **Endpoints**|**Description**
 :----|:----
