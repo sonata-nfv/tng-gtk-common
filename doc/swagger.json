@@ -149,31 +149,6 @@
           }
         }
       },
-      "/packages/on-change": {
-        "post": {
-            "summary": "Uploads a package",
-            "consumes": ["application/json"],
-            "produces": ["application/json"],
-            "parameters": [
-              {
-                "in": "body",
-                "name": "onChangeEvent",
-                "description": "Pet object that needs to be added to the store",
-                "required": true,
-                "schema": { "$ref": "#/definitions/OnPackageChangeEvent"}
-              }
-             ],
-            "operationId": "postOnChangeEvent",
-            "tags": ["package management"],
-            "responses": {
-                "200": { 
-                  "description": "OK, the package upload request has been accepted", 
-                  "schema": {} 
-                },
-                "400": { "description": "Bad Request", "schema": {} }
-            }
-        }
-      },
       "/packages/{package_uuid}": {
         "get": {
           "tags": ["package management"],
@@ -192,18 +167,6 @@
           "responses": {
               "200": { "description": "OK, the package query request has been accepted"},
               "400": { "description": "Bad Request" }
-          }
-        },
-        "options": {
-          "tags": ["package management"],
-          "summary": "Options packages",
-          "operationId": "packageOptions",
-          "consumes": ["*/*"],
-          "produces": ["application/json"],
-          "parameters": [],
-          "responses": {
-            "200": { "description": "OK"},
-            "400": {"description": "Bad Request"}
           }
         },
         "delete": {
@@ -227,7 +190,7 @@
             "404": { "description": "Not found"}
           }
         }
-      },
+    },
     "/packages/on-change": {
       "post": {
           "summary": "Uploads a package",
