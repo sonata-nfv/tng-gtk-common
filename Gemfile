@@ -34,7 +34,7 @@ source 'https://rubygems.org'
 ruby '2.4.3'
 
 gem 'rake', '12.3.0'
-gem 'rack', '2.0.6'
+gem 'rack', '2.0.8'
 gem 'rack-uploads', '0.2.1'
 gem 'sinatra', '2.0.2', require: 'sinatra/base'
 gem 'sinatra-contrib', '2.0.2', require: false
@@ -42,7 +42,7 @@ gem 'sinatra-cross_origin', '0.4.0'
 gem 'faraday', '0.14.0'
 gem 'curb', '0.9.3'
 gem 'redis', '4.0.3'
-gem 'puma', '3.11.0'
+gem 'puma', '3.12.2'
 gem 'pry', '0.12.2'
 
 gem 'tng-gtk-utils', '0.5.1'
